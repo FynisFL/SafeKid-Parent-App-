@@ -1,6 +1,6 @@
 # SafeKid Parent App — V7 Mobile-first UX remediation
 
-> **Release status:** V7 is a tested web/PWA implementation baseline, not a production-certified product. Automated domain/source checks and a static build pass. Browser-driven screenshots/E2E and physical-device behavior remain unverified because the test environment blocks Chromium navigation. Read `docs/QA_REPORT.md`, `docs/KNOWN_LIMITATIONS.md` and `docs/UAT_CHECKLIST.md` before deployment.
+> **Release status:** V7 is a tested web/PWA implementation baseline, not a production-certified product. Domain/source regression, static build, Playwright browser E2E and responsive screenshot/overflow checks pass in GitHub Actions. Real MapTiler provider behavior, physical-device GPS/notifications/SOS audio and assistive-technology UAT remain unverified. Read `docs/QA_REPORT.md`, `docs/KNOWN_LIMITATIONS.md` and `docs/UAT_CHECKLIST.md` before deployment.
 
 ## V7 scope delivered
 
@@ -11,6 +11,16 @@ V7 completes the five UX remediation phases approved after the V6 audit:
 3. **Safe Zone Builder:** create/manage is limited to the dedicated Safe Zones section. The builder supports MapTiler place search, map tap/drag marker, a live radius circle, location label and weekday/time schedule. Latitude/longitude are stored internally but are not typed by parents. Empty coordinates are rejected; no implicit `0,0` point can be saved.
 4. **SOS hardening:** one open SOS event at a time, including acknowledged-but-unresolved events. A synchronous activation lock blocks double taps while storage is pending. The local repeating two-note alarm remains user-gesture initiated, can be muted/re-enabled and stops on acknowledgement/resolution. SOS remains same-device only.
 5. **Global UX polish:** conditional reminder-time controls, weekday chips, a Settings Hub, in-page settings shortcuts that do not change the hash route, custom destructive-action confirmations and modal focus management (initial focus, Tab trap, Escape close and focus return).
+
+## Mobile-first redesign follow-on
+
+The mobile redesign keeps the existing Vanilla JavaScript SPA/PWA and domain behavior while refining the shared shell and core screens.
+
+- Shared mobile shell: five primary destinations, active-route semantics, keyboard-aware bottom navigation and modal focus handling.
+- Core screens: Home, Location, Safe Zones, SOS, Growth, More, FAQ, S.F AI, Plans and Profile/Settings receive mobile-first layout and responsive checks.
+- Freemium transparency: Free retains parent-phone GPS, core Safe Zones, same-device SOS, Growth basics and local storage. Plus remains planned and unavailable for purchase; no safety-feature gating or checkout is active.
+- Accessibility: 44 px touch target checks, keyboard/modal behavior, visible text-entry controls, reduced-motion handling and high-contrast SOS activation.
+- Regression: GitHub Actions validates ten routes across compact/mobile viewport sizes and a tablet/desktop matrix. See the QA report for the exact run and remaining device-specific UAT.
 
 ## Product boundaries
 
@@ -65,7 +75,7 @@ npm run typecheck  # JavaScript syntax checks only; not TypeScript compilation
 npm run lint       # privacy-oriented source lint
 npm test           # deterministic domain + source regression tests
 npm run build      # static deployable bundle in dist/
-npm run test:e2e   # Playwright flow and viewport suite; needs browser navigation access
+npm run test:e2e   # Playwright flow and viewport suite; browser access required
 ```
 
 ## Architecture caveat
@@ -77,7 +87,7 @@ This V7 deliverable remains the dependency-free JavaScript SPA inherited from th
 1. Run `npm run build`.
 2. Publish the **contents** of `dist/` to the HTTPS document root; do not upload the source tree as the web root.
 3. Restrict the browser MapTiler key to the deployed origin.
-4. Load the app online once so service worker revision `safekid-pwa-v7-full-ux-fix` replaces older caches.
+4. Load the app online once so service worker revision `safekid-pwa-v7-mobile-shell-r2` replaces older caches.
 5. Complete the V7 owner acceptance checks in `docs/UAT_CHECKLIST.md` on real iOS Safari and Android Chrome.
 
 ## Data and safety
