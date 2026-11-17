@@ -1330,3 +1330,143 @@ button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 @media (prefers-reduced-motion:reduce) {
   .family-hero-mascot,.growth-bubble { animation:none!important; }
 }
+
+
+/* V9 — distinct Help Center / S.F AI journeys, clearer freemium hierarchy, restrained motion */
+.faq-hero,.sfai-intro,.plans-hero{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  border:1px solid #E2EEF2;border-radius:24px;padding:24px 26px;
+  background:linear-gradient(115deg,#EAF8FA 0%,#F0F4FF 58%,#F8F2FF 100%);
+  box-shadow:0 12px 32px rgba(48,91,117,.055);overflow:hidden
+}
+.faq-hero>div:first-child,.sfai-intro-copy,.plans-hero>div:first-child{min-width:0;max-width:690px}
+.faq-kicker,.plans-eyebrow,.sfai-status{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:850;letter-spacing:.13em;color:#55969C}
+.faq-hero h2,.sfai-intro h2,.plans-hero h2{font-size:clamp(20px,2.2vw,26px);line-height:1.2;margin:8px 0;color:#315B70}
+.faq-hero p,.sfai-intro p,.plans-hero p{font-size:12px;line-height:1.6;color:#6F8999;margin:0;max-width:600px}
+.faq-hero-mark,.plans-hero-mark{width:68px;height:68px;flex:0 0 68px;display:grid;place-items:center;border-radius:22px;background:rgba(255,255,255,.72);color:#229DA3}
+.faq-search-wide{margin:16px 0 18px;min-height:52px}
+.faq-results-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 2px 10px;color:#496C7D}
+.faq-results-head b{font-size:13px}
+.faq-results-head span{font-size:10px;color:#91A4B1}
+.faq-list{display:grid;gap:8px}
+.faq-item{margin:0;overflow:hidden;border:1px solid #E5EDF1;border-radius:17px;background:#fff;box-shadow:0 4px 14px rgba(49,88,112,.025);transition:border-color .2s ease,box-shadow .2s ease}
+.faq-item[open]{border-color:#B9E5E3;box-shadow:0 8px 22px rgba(49,126,133,.075)}
+.faq-item summary{display:grid;grid-template-columns:34px minmax(0,1fr) 24px;align-items:center;gap:10px;min-height:58px;padding:11px 15px;list-style:none;cursor:pointer;color:#3E6173;font-size:12px;font-weight:700}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-index{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:#EFF8F8;color:#4C9B9E;font-size:9px;font-weight:800}
+.faq-chevron{display:grid;place-items:center;color:#86A0AC;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.faq-item[open] .faq-chevron{transform:rotate(180deg);color:#159DA1}
+.faq-answer{padding:0 18px 14px 59px;color:#6A8491;font-size:12px;line-height:1.7;animation:faq-answer-in .22s ease both}
+.faq-answer p{margin:0}
+@keyframes faq-answer-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.faq-contact-card{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px;padding:18px 20px}
+.faq-contact-card>div{min-width:0}
+.faq-contact-card b{font-size:14px;color:#3A6174}
+.faq-contact-card p{font-size:11px;color:#8498A4;margin:4px 0 0;line-height:1.5}
+.faq-contact-card .btn{flex:none;min-height:44px}
+.faq-empty{display:grid;justify-items:center;text-align:center;padding:28px 18px}
+.faq-empty>span{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:#EFF8F8;color:#4B9CA0;margin-bottom:10px}
+.faq-empty b{color:#456B7B;font-size:13px}
+.faq-empty p{color:#8B9DA8;font-size:11px;margin:5px 0 9px}
+.sfai-intro{min-height:184px;margin-bottom:16px;background:linear-gradient(110deg,#E8F8F7,#EEF3FF 65%,#F6F0FF)}
+.sfai-intro-copy{position:relative;z-index:1}
+.sfai-status{padding:6px 9px;border-radius:99px;background:rgba(255,255,255,.72)}
+.sfai-faq-link{display:inline-flex;align-items:center;gap:7px;margin-top:13px;color:#148F96;font-size:11px;font-weight:800}
+.sfai-faq-link svg:last-child{transition:transform .2s ease}
+.sfai-faq-link:hover svg:last-child{transform:translateX(3px)}
+.sfai-intro-art{width:138px;height:138px;flex:0 0 138px;display:grid;place-items:center;border-radius:38px;background:rgba(255,255,255,.54)}
+.sfai-intro-art img{width:125px;height:125px;object-fit:contain;filter:drop-shadow(0 8px 13px rgba(51,108,133,.12))}
+.sfai-workspace{padding:0;overflow:hidden}
+.sfai-heading{display:flex;align-items:center;gap:11px;padding:15px 18px}
+.sfai-heading>div:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.sfai-heading>div:nth-child(2) b{font-size:13px;color:#42687A}
+.sfai-heading>div:nth-child(2) small{font-size:10px}
+.sfai-heading>.badge{flex:none}
+.sfai-messages{min-height:270px;max-height:430px;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:18px;background:#FAFCFD;scroll-behavior:smooth}
+.chat-message{max-width:min(88%,620px);padding:12px 14px;font-size:12px;line-height:1.6;box-shadow:0 3px 10px rgba(43,87,111,.035);animation:chat-message-in .2s ease both}
+.chat-message.user{align-self:flex-end}
+.chat-message.assistant{align-self:flex-start}
+@keyframes chat-message-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.chat-form{display:flex;align-items:center;gap:9px;padding:13px 16px 8px;background:#fff}
+.chat-form input{min-width:0;flex:1;min-height:48px;padding:0 16px;font-size:13px}
+.chat-form .btn{width:48px;height:48px;min-width:48px;padding:0;display:grid;place-items:center}
+.sfai-disclaimer{padding:0 17px 14px;margin:0!important;font-size:10px;line-height:1.5}
+.plans-hero{margin-bottom:18px;background:linear-gradient(110deg,#E9F8F7,#F0F4FF 70%,#F9F2FF)}
+.plans-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:16px}
+.plan-card{display:flex;flex-direction:column;min-width:0;padding:22px 22px 18px;border-radius:24px;border:1px solid #E3EDF1;background:#fff;box-shadow:0 12px 30px rgba(43,82,106,.055);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.plan-card:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(43,82,106,.09)}
+.plan-card.plan-plus{background:linear-gradient(155deg,#F0FBFA 0%,#F5F4FF 100%);border-color:#D8EDEB}
+.plan-topline{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.plan-label{font-size:9px;font-weight:850;letter-spacing:.14em;color:#7B9AA6}
+.plan-card h2{font-size:27px;margin:13px 0 6px}
+.plan-lead{min-height:38px;font-size:11px;line-height:1.5;color:#8196A2;margin:0 0 13px}
+.plan-price{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding:14px 0;border-top:1px solid #EAF0F2;border-bottom:1px solid #EAF0F2}
+.plan-price strong{font:800 26px var(--font-heading);color:#287B75}
+.plan-price span{font-size:10px;color:#8297A2}
+.plan-price-plus strong{color:#527FA6}
+.plan-price-plus small{width:100%;font-size:10px;color:#8297A2}
+.plan-features{list-style:none;padding:0;margin:13px 0 16px;display:grid;gap:0}
+.plan-feature{display:grid;grid-template-columns:25px minmax(0,1fr) auto;align-items:start;gap:8px;padding:11px 0;border-bottom:1px solid rgba(223,234,238,.72)}
+.plan-feature:last-child{border-bottom:0}
+.plan-feature-icon{width:23px;height:23px;display:grid;place-items:center;border-radius:8px;background:#E8F7F1;color:#299675}
+.plan-feature.planned .plan-feature-icon{background:#EEF2FF;color:#718BC1}
+.plan-feature>span:nth-child(2){min-width:0;display:flex;flex-direction:column;gap:3px}
+.plan-feature b{font-size:11px;line-height:1.35;color:#4E6F80}
+.plan-feature small{font-size:9px;line-height:1.45;color:#91A2AC}
+.plan-feature em{font-style:normal;font-size:8px;font-weight:750;color:#5E9A83;white-space:nowrap;padding-top:3px}
+.plan-feature.planned em{color:#8091B9}
+.plan-footer{margin-top:auto;padding-top:13px;border-top:1px solid #EAF0F2;display:flex;flex-direction:column;gap:6px;color:#59927E;font-size:10px}
+.plan-footer span{display:flex;align-items:center;gap:7px}
+.plan-footer span:last-child{color:#8C9EA8;font-size:9px}
+.plan-footer-plus{color:#6888B1}
+.plans-transparency{display:flex;align-items:flex-start;gap:12px;margin:16px 0;padding:15px 17px;border:1px solid #DCEDEF;border-radius:18px;background:#F2FAFA;color:#4B8990}
+.plans-transparency>span{flex:none;margin-top:2px}
+.plans-transparency p{margin:0;color:#728C98;font-size:10px;line-height:1.6}
+.plans-transparency b{color:#3D7180;font-size:11px}
+.concepts-card{margin-top:16px}
+.concepts-card .section-row{align-items:center}
+.concepts-card .section-row h2{margin:0}
+.concepts-card .concept-grid>div{padding:14px;border:1px solid #EAF0F4;border-radius:15px;background:#FBFDFE}
+.concepts-card .concept-grid b{font-size:11px;color:#4D7184}
+.concepts-card .concept-grid p{font-size:10px;line-height:1.45;color:#8A9DA8;margin:5px 0 0}
+@media(max-width:767px){
+ .faq-hero,.sfai-intro,.plans-hero{padding:17px 16px;border-radius:21px;gap:10px}
+ .faq-hero h2,.sfai-intro h2,.plans-hero h2{font-size:19px;line-height:1.23}
+ .faq-hero p,.sfai-intro p,.plans-hero p{font-size:11px}
+ .faq-hero-mark,.plans-hero-mark{width:48px;height:48px;flex-basis:48px;border-radius:16px}
+ .faq-search-wide{margin:12px 0 14px;min-height:49px}
+ .faq-item summary{grid-template-columns:29px minmax(0,1fr) 20px;gap:8px;min-height:58px;padding:10px 11px;font-size:11px}
+ .faq-index{width:27px;height:27px}
+ .faq-answer{padding:0 13px 13px 48px;font-size:11px;line-height:1.65}
+ .faq-contact-card{align-items:stretch;flex-direction:column;padding:16px;margin-top:13px}
+ .faq-contact-card .btn{width:100%;justify-content:center}
+ .sfai-intro{min-height:0}
+ .sfai-intro-copy{max-width:calc(100% - 74px)}
+ .sfai-intro-art{width:74px;height:82px;flex-basis:74px;border-radius:22px}
+ .sfai-intro-art img{width:80px;height:80px}
+ .sfai-workspace{border-radius:20px}
+ .sfai-heading{padding:12px 13px}
+ .sfai-messages{min-height:245px;max-height:52dvh;padding:12px}
+ .chat-message{max-width:92%;font-size:11px;padding:10px 12px}
+ .chat-form{padding:11px 12px 7px}
+ .chat-form input{min-height:46px;font-size:16px}
+ .chat-form .btn{width:46px;height:46px;min-width:46px}
+ .sfai-disclaimer{padding:0 13px 13px;font-size:9px}
+ .plans-hero{margin-bottom:13px}
+ .plans-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+ .plan-card{padding:18px 16px 15px;border-radius:21px}
+ .plan-card h2{font-size:25px;margin-top:10px}
+ .plan-lead{min-height:0;margin-bottom:10px}
+ .plan-price{padding:12px 0}
+ .plan-price strong{font-size:24px}
+ .plan-feature{grid-template-columns:24px minmax(0,1fr) auto;gap:7px;padding:10px 0}
+ .plan-feature b{font-size:11px}
+ .plan-feature small{font-size:9px}
+ .plan-feature em{font-size:8px}
+ .plans-transparency{padding:13px;border-radius:15px}
+ .concepts-card{padding:15px}
+ .concepts-card .concept-grid{grid-template-columns:minmax(0,1fr);gap:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .faq-item,.faq-chevron,.faq-answer,.chat-message,.plan-card,.sfai-faq-link svg:last-child{animation:none!important;transition:none!important;transform:none!important}
+}
