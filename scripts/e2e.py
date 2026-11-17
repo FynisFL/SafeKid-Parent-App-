@@ -95,7 +95,7 @@ try:
     page.locator('#onboarding-form button[type="submit"]').click()
     page.wait_for_selector('.app-shell', timeout=5000)
     assert page.locator('.mobile-nav').count() == 1
-    assert page.get_by_text('Chào QA!', exact=False).count() > 0
+    assert page.get_by_text('Chào Parent!', exact=True).count() == 1, 'Vietnamese greeting uses the final name in the parent profile'
     results.append('Onboarding completion -> app shell transition')
 
     # More hub and Safe Zone: test that an unselected location cannot save.
@@ -331,6 +331,8 @@ try:
       raise AssertionError('Browser page errors: ' + '; '.join(errors))
     browser.close()
 except Exception as e:
+  import traceback
+  traceback.print_exc()
   print(f'E2E FAILED/BLOCKED: {e}', file=sys.stderr)
   if errors: print('Page errors: ' + '; '.join(errors), file=sys.stderr)
   if console_errors: print('Console errors: ' + '; '.join(console_errors[:15]), file=sys.stderr)
