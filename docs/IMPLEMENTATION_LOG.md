@@ -35,6 +35,27 @@ Release: V7 UX/UI remediation
 - `npm run test:e2e`: blocked at initial navigation with `net::ERR_BLOCKED_BY_ADMINISTRATOR` for `http://127.0.0.1:4173/`. No E2E assertion or screenshot is claimed as passed.
 - Physical device, rendered screenshot matrix, live MapTiler in browser, native GPS/notification/audio behavior: not verified in this environment. See QA report and UAT checklist.
 
+
+## Mobile-first redesign follow-on — PR #9
+
+| Phase | Scope | Implementation | Verification |
+|---|---|---|---|
+| 0 | Baseline / branch safety | Kept changes on `redesign/mobile-first-ux-v11`; no production-main edits during implementation. | PR base/head and branch state verified. |
+| 1 | Shared mobile shell | Five-item nav preserved; nav yields while a text field is focused; modal viewport/focus behavior fixed; Service Worker precaches refinement CSS and cache revision is now `safekid-pwa-v7-mobile-shell-r2`. | Keyboard focus/blur E2E and modal regression checks. |
+| 2 | Core screen redesign | Responsive refinements for Home, Location, Safe Zones, SOS, Growth, More, FAQ, S.F AI, Plans and Profile/Settings. | Ten routes × six mobile viewport configurations; overflow and bottom-nav geometry assertions; 17 screenshots. |
+| 3 | Freemium/content | Free retains parent-phone GPS, core Safe Zones, same-device SOS, Growth basics and local storage. Plus is planned/not for sale; no checkout or safety-feature gating. | E2E checks both plan cards, Free safety inclusions, no purchase CTA and no in-app payment. |
+| 4 | Forms/accessibility/motion | Keyboard-aware nav, modal focus preservation, reduced-motion rules and improved SOS hold text contrast. | Keyboard/modal E2E, reduced-motion source regression, SOS contrast test. |
+| 5 | UAT/regression | Added S.F AI composer visibility and Plans/Profile/Safe Zones to the mobile route matrix; updated UAT checklist. | GitHub Actions browser E2E; real device and live MapTiler UAT remain pending. |
+
+### Follow-on defect register
+1. S.F AI composer was below the first mobile viewport and could be covered by the fixed bottom navigation. Workspace height now adapts to dynamic viewport height; E2E asserts the composer stays above the nav at 320×720 through 430×932.
+2. SOS hold-button foreground did not contrast sufficiently with its red gradient. The fill is now darker with white primary/helper labels; regression computes contrast for both gradient stops.
+3. Mobile stylesheet changes could remain stale in an installed PWA if the cache key were reused. Service Worker cache was bumped to `safekid-pwa-v7-mobile-shell-r2` and its references/tests were updated.
+
+### Verification interpretation
+- The GitHub Actions browser suite uses a local MapLibre fixture; it verifies UI flows and geometry, not live MapTiler service availability.
+- Physical GPS permission, notifications, SOS audibility/haptics, PWA install/update on real Android/iOS and assistive-technology review remain unverified.
+- The application remains the existing Vanilla JavaScript SPA/PWA; this redesign does not migrate the framework or add backend/watch/payment capabilities.
 ## Architecture/environment deviation retained
 
 The source is still a dependency-free JavaScript SPA, not React/TypeScript/Vite. No native project, backend, account, cloud sync, payment, analytics, remote AI or smartwatch integration was added. See `DECISIONS.md` and `KNOWN_LIMITATIONS.md` for the distinction between implemented product work and unverified environment-specific behavior.
