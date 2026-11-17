@@ -147,7 +147,7 @@ try:
     page.locator('[data-action="sos-trigger"]').click()
     page.get_by_text('Đang có một sự kiện SOS chưa xử lý', exact=False).wait_for(timeout=4000)
     assert page.locator('[data-action="sos-confirm"]').count() == 0
-    page.locator('[data-action^="sos-ack:"]').click()
+    page.locator('[data-action^="sos-ack:"]').first.click()
     assert page.get_by_text('Bạn đã xác nhận SOS', exact=False).count() > 0
     assert page.locator('[data-action="sos-confirm"]').count() == 0
     page.locator('[data-action^="sos-resolve:"]').first.click()
