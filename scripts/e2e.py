@@ -188,7 +188,9 @@ try:
     assert page.locator('.sfai-disclosure').is_visible(), 'S.F AI limitation disclosure must be visible above the conversation'
     assert page.get_by_text('không phải nhân viên trực tuyến', exact=False).count() > 0
     prompt = page.locator('[data-sfai-prompt]').first
+    page.evaluate('window.qaKeyboardEnabled = true')
     prompt.click()
+    page.wait_for_function("document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
     assert page.locator('#sfai-form input[name="question"]').input_value() != ''
     assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Text focus must activate keyboard shell state'
     assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must yield space while a mobile text field is focused'
