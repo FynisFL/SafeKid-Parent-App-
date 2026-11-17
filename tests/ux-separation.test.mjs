@@ -62,7 +62,8 @@ test('Support, FAQ and plan components have responsive and reduced-motion rules'
 
 test('Mobile shell keeps exactly five labelled primary destinations and exposes the active route',()=>{
   const shell=source.slice(source.indexOf('function renderShell(content)'),source.indexOf('function renderOnboarding()'));
-  const routes=[...shell.matchAll(/\['\/(home|location|sos|growth|more)'/g)].map(match=>match[1]);
+  const mobile=shell.slice(shell.indexOf('const mobile=['),shell.indexOf('const unread='));
+  const routes=[...mobile.matchAll(/\['\/(home|location|sos|growth|more)'/g)].map(match=>match[1]);
   assert.deepEqual(routes,['home','location','sos','growth','more']);
   assert.match(shell,/aria-current="page"/);
   assert.match(refinements,/\.mobile-nav a\{[^}]*min-height:48px/s);
@@ -71,7 +72,7 @@ test('Mobile text-entry focus hides the bottom navigation and restores it after 
   assert.match(source,/function syncMobileKeyboardState\(\)/);
   assert.match(source,/document\.addEventListener\('focusin',syncMobileKeyboardState\)/);
   assert.match(source,/window\.visualViewport\.addEventListener\('resize',syncMobileKeyboardState/);
-  assert.match(refinements,/\.app-shell\.keyboard-open \.mobile-nav\{display:none!important\}/);
+  assert.match(refinements,/\.app-shell\.keyboard-open \.mobile-nav\{display:none!important;\}/);
   assert.match(refinements,/\.app-shell\.keyboard-open \.modal\{max-height:calc\(100dvh - 12px\)\}/);
 });
 test('Service worker invalidates the previous shell cache and precaches the mobile refinement stylesheet',()=>{

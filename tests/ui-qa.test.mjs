@@ -74,7 +74,7 @@ test('watch updates the map marker and live accuracy without recreating the map 
 });
 
 test('PWA cache version is incremented after map and responsive UI changes',()=>{
-  assert.match(sw,/safekid-pwa-v7-full-ux-fix/);
+  assert.match(sw,/safekid-pwa-v7-mobile-shell-r1/);
   assert.match(sw,/src\/config\/map\.js/);
 });
 
