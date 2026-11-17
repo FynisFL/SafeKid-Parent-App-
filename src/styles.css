@@ -1484,3 +1484,12 @@ button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 @media(prefers-reduced-motion:reduce){
  .route-stage.route-enter,.chat-message:last-child{animation:none!important}
 }
+
+
+/* V10 mobile readability: keep five-tab labels legible without clipping narrow devices. */
+@media(min-width:375px) and (max-width:767px){
+  .mobile-nav a>span:last-child{font-size:10px;line-height:1.15;letter-spacing:0}
+}
+@media(max-width:374px){
+  .mobile-nav a>span:last-child{font-size:9px;line-height:1.1;letter-spacing:-.015em}
+}
