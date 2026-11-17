@@ -190,7 +190,7 @@ try:
           assert len(labels) == 4 and all(x['whiteSpace'] == 'normal' for x in label_state), f'Home quick-action labels must wrap, not clip: {label_state}'
         if route == '#/growth' and width >= 360:
           tabs = page.locator('.tabbar a').evaluate_all("els => els.map(el => ({text:el.textContent.trim(),left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right}))")
-          assert len(tabs) == 5 and all(x['left'] >= 0 and x['right'] <= innerWidth for x in tabs), f'Growth tabs must all fit at {width}px: {tabs}'
+          assert len(tabs) == 5 and all(x['left'] >= 0 and x['right'] <= width for x in tabs), f'Growth tabs must all fit at {width}px: {tabs}'
         metrics=page.evaluate('''() => {
           const nav=document.querySelector('.mobile-nav');
           const wrap=document.querySelector('.page-wrap');
