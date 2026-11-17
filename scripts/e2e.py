@@ -165,6 +165,7 @@ try:
     prompt = page.locator('[data-sfai-prompt]').first
     prompt.click()
     assert page.locator('#sfai-form input[name="question"]').input_value() != ''
+    assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must remain reachable while the S.F AI composer is focused'
     results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer')
     page.locator('a[href="#/more"]').click()
     page.locator('.support-entry-card--hub[href="#/sfai"]').wait_for(timeout=3000)
@@ -174,6 +175,8 @@ try:
     assert page.locator('#sfai-form').count() == 0
     page.locator('#faq-search').fill('vi tri')
     page.wait_for_timeout(100)
+    assert page.locator('.faq-item').count() > 0, 'Accent-insensitive FAQ search for "vi tri" should find the approved position FAQ'
+    assert page.locator('#faq-count').inner_text().startswith('1'), 'FAQ result count should update with the filtered list'
     page.locator('a[href="#/sfai"]').last.wait_for(timeout=3000)
     results.append('FAQ remains independent, searchable and links to S.F AI without embedding chat')
 
