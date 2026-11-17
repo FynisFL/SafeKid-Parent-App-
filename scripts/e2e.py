@@ -156,7 +156,7 @@ try:
     results.append('SOS two-step activation, duplicate guard, acknowledge and resolve')
 
     # Dedicated support destinations and discoverability.
-    page.locator('a[href="#/home"]').click()
+    page.locator('.mobile-nav a[href="#/home"]').click()
     page.locator('.support-entry-card[href="#/sfai"]').first.wait_for(timeout=3000)
     page.locator('.support-entry-card[href="#/sfai"]').first.click()
     page.get_by_role('heading', name='S.F AI', exact=True).wait_for(timeout=3000)
