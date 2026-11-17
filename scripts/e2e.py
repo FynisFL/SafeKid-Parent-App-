@@ -128,7 +128,13 @@ try:
 
     # Growth form conditional UI.
     page.locator('.mobile-nav a[href="#/growth"]').click()
+    page.set_viewport_size({'width':390,'height':560})
     page.locator('.intro-actions [data-action="modal-task"]').click()
+    assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Task form focus must activate keyboard shell state'
+    assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must be hidden while task form input is focused'
+    submit_rect = page.locator('#task-form button[type="submit"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
+    assert submit_rect['visible'] and submit_rect['bottom'] <= 560, f'Task submit action must remain inside keyboard-visible viewport: {submit_rect}'
+    page.set_viewport_size({'width':390,'height':844})
     assert page.locator('#reminder-time-wrap').is_hidden()
     page.locator('input[name="reminderEnabled"]').check()
     assert page.locator('#reminder-time-wrap').is_visible()
@@ -166,8 +172,11 @@ try:
     prompt = page.locator('[data-sfai-prompt]').first
     prompt.click()
     assert page.locator('#sfai-form input[name="question"]').input_value() != ''
-    assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must remain reachable while the S.F AI composer is focused'
-    results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer')
+    assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Text focus must activate keyboard shell state'
+    assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must yield space while a mobile text field is focused'
+    page.locator('#sfai-form input[name="question"]').evaluate('(el) => el.blur()')
+    assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must return after text focus ends'
+    results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer; keyboard shell hides/restores nav')
     page.locator('a[href="#/more"]').click()
     page.locator('.support-entry-card--hub[href="#/sfai"]').wait_for(timeout=3000)
     page.locator('.more-hub a[href="#/help"]').click()
@@ -207,11 +216,16 @@ try:
         metrics=page.evaluate('''() => {
           const nav=document.querySelector('.mobile-nav');
           const wrap=document.querySelector('.page-wrap');
+          const links=[...(nav?.querySelectorAll('a')||[])];
           return {viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth,
-            nav:nav?{top:nav.getBoundingClientRect().top,height:nav.getBoundingClientRect().height}:null,
+            nav:nav?{top:nav.getBoundingClientRect().top,bottom:nav.getBoundingClientRect().bottom,height:nav.getBoundingClientRect().height}:null,
+            links:links.map(a=>({height:a.getBoundingClientRect().height,label:a.innerText.trim(),active:a.getAttribute('aria-current')})),
             last:wrap?.lastElementChild?{bottom:wrap.lastElementChild.getBoundingClientRect().bottom}:null};
         }''')
         assert metrics['scroll'] <= metrics['viewport'], f'overflow {route} at {width}px: {metrics}'
+        assert metrics['nav'] and metrics['nav']['bottom'] <= height, f'nav outside viewport {route} at {width}px: {metrics}'
+        assert len(metrics['links']) == 5 and all(x['height'] >= 44 and x['label'] for x in metrics['links']), f'five labelled touch targets required: {metrics}'
+        assert sum(1 for x in metrics['links'] if x['active'] == 'page') == 1, f'exactly one active route must be announced: {metrics}'
         page.evaluate('window.scrollTo(0,document.documentElement.scrollHeight)')
         page.wait_for_timeout(30)
         bottom=page.evaluate('''() => {

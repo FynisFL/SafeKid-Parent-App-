@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 
 const source=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
 const styles=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+const refinements=readFileSync(new URL('../src/mobile-refinements.css',import.meta.url),'utf8');
+const serviceWorker=readFileSync(new URL('../sw.js',import.meta.url),'utf8');
 
 test('FAQ and S.F AI have separate routes and renderers',()=>{
   assert.equal(source.includes("lastRenderedRoute=null;"+String.fromCharCode(92)+"nfunction render()"),false);
@@ -56,4 +58,23 @@ test('Support, FAQ and plan components have responsive and reduced-motion rules'
   for(const selector of ['.faq-item','.sfai-workspace','.plans-grid','.plan-card']) assert.ok(styles.includes(selector),'Missing '+selector);
   assert.ok(styles.includes('.plans-grid{grid-template-columns:minmax(0,1fr)'));
   assert.ok(styles.includes('.plans-grid{grid-template-columns:minmax(0,1fr)'));
+});
+
+test('Mobile shell keeps exactly five labelled primary destinations and exposes the active route',()=>{
+  const shell=source.slice(source.indexOf('function renderShell(content)'),source.indexOf('function renderOnboarding()'));
+  const routes=[...shell.matchAll(/\['\/(home|location|sos|growth|more)'/g)].map(match=>match[1]);
+  assert.deepEqual(routes,['home','location','sos','growth','more']);
+  assert.match(shell,/aria-current="page"/);
+  assert.match(refinements,/\.mobile-nav a\{[^}]*min-height:48px/s);
+});
+test('Mobile text-entry focus hides the bottom navigation and restores it after blur',()=>{
+  assert.match(source,/function syncMobileKeyboardState\(\)/);
+  assert.match(source,/document\.addEventListener\('focusin',syncMobileKeyboardState\)/);
+  assert.match(source,/window\.visualViewport\.addEventListener\('resize',syncMobileKeyboardState/);
+  assert.match(refinements,/\.app-shell\.keyboard-open \.mobile-nav\{display:none!important\}/);
+  assert.match(refinements,/\.app-shell\.keyboard-open \.modal\{max-height:calc\(100dvh - 12px\)\}/);
+});
+test('Service worker invalidates the previous shell cache and precaches the mobile refinement stylesheet',()=>{
+  assert.match(serviceWorker,/safekid-pwa-v7-mobile-shell-r1/);
+  assert.match(serviceWorker,/\.\/src\/mobile-refinements\.css/);
 });

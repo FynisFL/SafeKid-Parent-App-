@@ -310,3 +310,11 @@ body{overflow-x:clip;}
 
 .sfai-disclosure{display:block;border:1px solid #E1ECEC;border-radius:12px;background:#F8FBFB;color:#536F78;}
 @media(max-width:767px){.sfai-disclosure{margin:0 0 10px!important;padding:9px 11px;font-size:9px;line-height:1.4;border:1px solid #E1ECEC;border-radius:12px;}}
+
+/* Phase 1 — keyboard-visible shell behavior. Text-entry focus on phone yields the viewport to the editor. */
+.app-shell.keyboard-open .mobile-nav{display:none!important;}
+.app-shell.keyboard-open .main-area{padding-bottom:0!important;}
+.app-shell.keyboard-open .page-wrap{padding-bottom:16px!important;}
+.app-shell.keyboard-open .modal-backdrop{padding-bottom:max(8px,env(safe-area-inset-bottom,0px));}
+.app-shell.keyboard-open .modal{max-height:calc(100dvh - 12px);}
+.app-shell.keyboard-open .modal-body{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
