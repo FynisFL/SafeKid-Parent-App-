@@ -50,6 +50,18 @@ try:
     browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server'])
     context = browser.new_context(viewport={'width':390, 'height':844}, device_scale_factor=1, is_mobile=True, has_touch=True)
     context.add_init_script(MAPLIBRE_MOCK)
+    # Device emulation has no OS keyboard. Simulate its visual viewport resize.
+    context.add_init_script("""() => {
+      const viewport=window.visualViewport;
+      if(!viewport)return;
+      const height=Object.getOwnPropertyDescriptor(VisualViewport.prototype,'height').get;
+      Object.defineProperty(viewport,'height',{get(){
+        const textEntry=document.activeElement?.matches('input[type=text],input:not([type]),textarea');
+        return height.call(viewport)-(textEntry?260:0);
+      }});
+      for(const event of ['focusin','focusout'])
+        document.addEventListener(event,()=>requestAnimationFrame(()=>viewport.dispatchEvent(new Event('resize'))));
+    }""")
     page = context.new_page()
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.on('console', lambda m: console_errors.append(m.text) if m.type == 'error' else None)
@@ -87,11 +99,12 @@ try:
     results.append('Onboarding completion -> app shell transition')
 
     # More hub and Safe Zone: test that an unselected location cannot save.
+    page.evaluate("window.safeKidTestNav = document.querySelector('.mobile-nav')")
     page.locator('.mobile-nav a[href="#/more"]').click()
     page.locator('.more-hub a[href="#/safe-zones"]').click()
     page.locator('[data-action="modal-zone"]').first.click()
     page.locator('input[name="name"]').fill('QA Zone')
-    page.locator('#zone-form button[type="submit"]').click()
+    page.locator('button[type="submit"][form="zone-form"]').click()
     page.wait_for_timeout(80)
     assert page.get_by_text('Hãy tìm hoặc chọn một vị trí trên bản đồ trước khi lưu.', exact=False).count() > 0
     assert page.get_by_text('Chưa có vùng an toàn nào', exact=False).count() == 0 or page.locator('.zone-card').count() == 0
@@ -103,11 +116,12 @@ try:
     page.locator('[data-zone-result="0"]').wait_for(timeout=4000)
     page.locator('[data-zone-result="0"]').click()
     page.locator('#zone-radius-range').fill('350')
-    page.locator('#zone-form button[type="submit"]').click()
+    page.locator('button[type="submit"][form="zone-form"]').click()
     page.get_by_text('QA Zone', exact=True).wait_for(timeout=4000)
     results.append('Safe Zone search -> place selection -> radius -> save; blank-coordinate guard')
 
     # Location screen remains view-only, with no Safe Zone CRUD actions.
+    assert page.evaluate("window.safeKidTestNav === document.querySelector('.mobile-nav')"), 'Navigation node must persist between routes'
     page.locator('.mobile-nav a[href="#/location"]').click()
     page.get_by_text('Bản đồ chỉ hiển thị', exact=True).wait_for(timeout=3000)
     assert page.locator('[data-action="modal-zone"]').count() == 0
@@ -135,8 +149,8 @@ try:
     keyboard_state = page.evaluate("""() => {const nav=document.querySelector('.mobile-nav');return {width:innerWidth,mobile:matchMedia('(max-width: 767px)').matches,active:document.activeElement?.outerHTML?.slice(0,180),shell:document.querySelector('.app-shell')?.className,focused:document.activeElement?.getAttribute('name'),navDisplay:nav?getComputedStyle(nav).display:null,navParent:nav?.parentElement?.className,styles:[...document.styleSheets].map(s=>({href:s.href,keyboardRule:(()=>{try{return [...s.cssRules].some(r=>r.selectorText==='.app-shell.keyboard-open .mobile-nav')}catch{return 'blocked'}})()}))};}""")
     assert 'keyboard-open' in (keyboard_state['shell'] or ''), f'Task form focus must activate keyboard shell state: {keyboard_state}'
     assert not page.locator('.mobile-nav').is_visible(), f'Bottom navigation must be hidden while task form input is focused: {keyboard_state}'
-    submit_rect = page.locator('#task-form button[type="submit"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
-    assert submit_rect['visible'] and submit_rect['bottom'] <= 560, f'Task submit action must remain inside keyboard-visible viewport: {submit_rect}'
+    submit_rect = page.locator('button[type="submit"][form="task-form"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
+    assert submit_rect['visible'] and submit_rect['bottom'] <= 300, f'Task submit action must remain inside keyboard-visible viewport: {submit_rect}'
     page.set_viewport_size({'width':390,'height':844})
     assert page.locator('#reminder-time-wrap').is_hidden()
     page.locator('input[name="reminderEnabled"]').check()
@@ -146,7 +160,7 @@ try:
     weekday_index = page.evaluate("() => (new Date().getDay() + 6) % 7")
     page.locator('.weekday-chip input[name="weekday"]').nth(weekday_index).check()
     page.locator('input[name="title"]').fill('QA weekly task')
-    page.locator('#task-form button[type="submit"]').click()
+    page.locator('button[type="submit"][form="task-form"]').click()
     page.get_by_text('QA weekly task', exact=True).wait_for(timeout=4000)
     results.append('Growth conditional reminder and weekly weekday controls')
 
@@ -200,8 +214,56 @@ try:
     page.locator('a[href="#/sfai"]').last.wait_for(timeout=3000)
     results.append('FAQ remains independent, searchable and links to S.F AI without embedding chat')
 
-    # Core route mobile geometry: no horizontal overflow and final content scrolls above fixed nav.
-    for route in ['#/home', '#/location', '#/safe-zones', '#/sos', '#/growth', '#/more', '#/sfai', '#/help', '#/plans', '#/profile']:
+    # Create a real device through the UI so the detail route has populated cards.
+    page.goto('http://127.0.0.1:4173/#/watch-passport', wait_until='domcontentloaded')
+    page.locator('.page-intro [data-action="modal-device"]').click()
+    page.locator('#device-form [name="displayName"]').fill('Đồng hồ của bé')
+    page.locator('#device-form [name="serialOrDeviceCode"]').fill('SAFEKID-' + '1234567890' * 6)
+    page.locator('button[form="device-form"][type="submit"]').click()
+    page.locator('.device-card [data-action^="device-detail:"]').click()
+    page.wait_for_url(lambda url: '#/watch-passport-detail?device=' in url)
+    device_route = '#' + page.url.split('#', 1)[1]
+    page.reload()
+    page.locator('.device-detail-grid').wait_for()
+    page.locator('[data-action^="modal-accessory:"]').click()
+    page.locator('#accessory-form').wait_for()
+    page.go_back()
+    page.locator('.modal-backdrop').wait_for(state='detached')
+    page.locator('.device-grid').wait_for()
+
+    popup_cases = [
+      ('#/safe-zones', 'modal-zone'), ('#/contacts', 'modal-contact'),
+      ('#/growth', 'modal-task'), ('#/growth', 'modal-habit'),
+      ('#/watch-passport', 'modal-device'), (device_route, 'modal-maintenance:'),
+      (device_route, 'modal-accessory:'), (device_route, 'modal-data:'),
+      (device_route, 'modal-document:'), ('#/sos', 'sos-confirm'),
+    ]
+    for width, height in [(320, 568), (390, 844)]:
+      page.set_viewport_size({'width':width,'height':height})
+      for route, action in popup_cases:
+        page.goto('http://127.0.0.1:4173/' + route, wait_until='domcontentloaded')
+        page.locator(f'[data-action^="{action}"]').first.click()
+        dialog = page.locator('.modal-backdrop:not([inert]) .modal')
+        dialog.wait_for()
+        dialog.locator(':scope > .modal-actions').wait_for()
+        page.wait_for_timeout(230)
+        bounds = dialog.evaluate("""el => {
+          const box=el.getBoundingClientRect(), footer=el.querySelector(':scope > .modal-actions');
+          return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,
+            footer:footer.getBoundingClientRect().bottom, viewport:innerHeight};
+        }""")
+        assert bounds['left'] >= 0 and bounds['right'] <= width and bounds['top'] >= 0 and bounds['bottom'] <= height and bounds['footer'] <= height, (route,action,width,bounds)
+        dialog.locator('.modal-head [data-action="modal-close"]').click()
+        dialog.wait_for(state='detached')
+    results.append('Ten popup entry points checked at two mobile sizes')
+
+    routes = [
+      '#/home', '#/location', '#/safe-zones', '#/sos', '#/alerts', '#/contacts',
+      '#/growth', '#/growth/habits', '#/growth/calendar', '#/growth/progress', '#/growth/coins',
+      '#/watch-passport', device_route, '#/more', '#/sfai', '#/help', '#/plans',
+      '#/profile', '#/settings', '#/permissions',
+    ]
+    for route in routes:
       page.goto('http://127.0.0.1:4173/' + route, wait_until='domcontentloaded')
       page.wait_for_timeout(500)
       if route == '#/plans':
@@ -218,12 +280,12 @@ try:
           labels = page.locator('.mobile-quick-actions a b').all_text_contents()
           label_state = page.locator('.mobile-quick-actions a b').evaluate_all("els => els.map(el => ({text:el.textContent.trim(),whiteSpace:getComputedStyle(el).whiteSpace,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth}))")
           assert len(labels) == 4 and all(x['whiteSpace'] == 'normal' for x in label_state), f'Home quick-action labels must wrap, not clip: {label_state}'
-          hierarchy = page.evaluate("""() => {const box=s=>document.querySelector(s)?.getBoundingClientRect();return {location:box('.location-feature')?.top,quick:box('.mobile-quick-actions')?.top,support:box('.support-entry-card')?.top,hero:getComputedStyle(document.querySelector('.family-hero')).display,date:document.querySelector('.intro-date')?.textContent.trim(),dateFont:getComputedStyle(document.querySelector('.intro-date')).fontSize};}""")
+          hierarchy = page.evaluate("""() => {const box=s=>document.querySelector(s)?.getBoundingClientRect();return {location:box('.location-feature')?.top,quick:box('.mobile-quick-actions')?.top,support:box('.support-entry-card')?.top,hero:document.querySelector('.family-hero') ? getComputedStyle(document.querySelector('.family-hero')).display : 'none',date:document.querySelector('.intro-date')?.textContent.trim(),dateFont:getComputedStyle(document.querySelector('.intro-date')).fontSize};}""")
           assert hierarchy['location'] < hierarchy['quick'] < hierarchy['support'] and hierarchy['hero'] == 'none', f'Home must prioritize parent GPS status and actions over decoration: {hierarchy}'
           assert hierarchy['date'] and hierarchy['dateFont'] != '0px', f'Home date label must be readable: {hierarchy}'
-        if route == '#/growth' and width >= 360:
-          tabs = page.locator('.tabbar a').evaluate_all("els => els.map(el => ({text:el.textContent.trim(),left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right}))")
-          assert len(tabs) == 5 and all(x['left'] >= 0 and x['right'] <= width for x in tabs), f'Growth tabs must all fit at {width}px: {tabs}'
+        if route == '#/growth':
+          tabs = page.locator('.tabbar a').evaluate_all("els => els.map(el => ({width:el.offsetWidth,height:el.offsetHeight}))")
+          assert len(tabs) == 5 and all(x['height'] >= 44 for x in tabs), f'Growth tabs must keep usable touch targets at {width}px: {tabs}'
         metrics=page.evaluate('''() => {
           const nav=document.querySelector('.mobile-nav');
           const wrap=document.querySelector('.page-wrap');
@@ -252,9 +314,9 @@ try:
       page.wait_for_timeout(500)
       page.evaluate('window.scrollTo(0,0)')
       page.wait_for_timeout(120)
-      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390-viewport.png'))
-      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390.png'),full_page=True)
-    results.append('Mobile route geometry matrix: 10 routes × 6 phone viewports; overflow and final-content/nav clearance')
+      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route.split("?", 1)[0][2:].replace("/", "-") or "home"}-390-viewport.png'))
+      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route.split("?", 1)[0][2:].replace("/", "-") or "home"}-390.png'),full_page=True)
+    results.append('Mobile route geometry matrix: 20 routes × 6 phone viewports; overflow and final-content/nav clearance')
 
     # Post-setup responsive pages at mobile, tablet and desktop widths.
     for width, height in [(320,780),(360,800),(390,844),(430,932),(767,900),(768,900),(1024,900),(1280,900),(1440,900),(1920,1080)]:

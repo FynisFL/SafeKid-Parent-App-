@@ -74,7 +74,7 @@ test('watch updates the map marker and live accuracy without recreating the map 
 });
 
 test('PWA cache version is incremented after map and responsive UI changes',()=>{
-  assert.match(sw,/safekid-pwa-v7-mobile-shell-r2/);
+  assert.match(sw,/safekid-pwa-v7-mobile-shell-r5/);
   assert.match(sw,/src\/config\/map\.js/);
 });
 
@@ -162,7 +162,7 @@ test('mobile redesign defines a floating safe-area navigation, readable controls
 
 test('first-run onboarding is rendered outside the app shell and prioritises the profile form', () => {
   const source = app;
-  assert.match(source, /root\.innerHTML=firstRun\?renderOnboarding\(\):renderShell/);
+  assert.match(source, /if\(firstRun\)\{\s*root\.innerHTML=renderOnboarding\(\)/);
   assert.match(source, /const firstRun=!S\.profile\|\|S\.route==='\/onboarding'/);
   assert.match(source, /id="onboarding-form"[\s\S]*?name="parentName"[\s\S]*?name="childName"[\s\S]*?type="submit"/);
   assert.doesNotMatch(source.slice(source.indexOf('function renderOnboarding'), source.indexOf('function renderPage')), /mobile-nav|topbar|notification-shortcut/);
@@ -199,7 +199,7 @@ test('Mobile quick actions and Settings Hub use icons present in the shared icon
 });
 
 test('profile setup route cannot be revisited as a fake login screen after a profile exists', () => {
-  assert.match(app, /if\(!S\.profile\)next='\/onboarding';else if\(next==='\/onboarding'\|\|next==='\/'\)next='\/home'/);
+  assert.match(app, /const next=!S\.profile\?'\/onboarding':path==='\/'\|\|path==='\/onboarding'\?'\/home':path/);
 });
 test('SOS activation uses a synchronous pending lock and acknowledged SOS remains manageable', () => {
   assert.match(app, /if\(S\.sosActivationPending\)/);
