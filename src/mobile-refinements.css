@@ -307,3 +307,6 @@ body{overflow-x:clip;}
 .faq-category-filter button{flex:0 0 auto;min-height:40px;padding:0 13px;border:1px solid #DCE9EA;border-radius:999px;background:#fff;color:#607B84;font-size:11px;font-weight:700;white-space:nowrap;}
 .faq-category-filter button[aria-pressed="true"]{border-color:#7FD2CF;background:#E8F8F6;color:#087F87;}
 @media(max-width:767px){.faq-category-filter{margin:0 -2px 8px;padding:2px 2px 8px;}.faq-category-filter button{min-height:42px;padding-inline:12px;font-size:10px;}}
+
+.sfai-disclosure{display:block;border:1px solid #E1ECEC;border-radius:12px;background:#F8FBFB;color:#536F78;}
+@media(max-width:767px){.sfai-disclosure{margin:0 0 10px!important;padding:9px 11px;font-size:9px;line-height:1.4;border:1px solid #E1ECEC;border-radius:12px;}}

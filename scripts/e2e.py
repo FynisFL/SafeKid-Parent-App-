@@ -161,6 +161,7 @@ try:
     page.locator('.support-entry-card[href="#/sfai"]').first.click()
     page.get_by_role('heading', name='S.F AI', exact=True).wait_for(timeout=3000)
     assert page.locator('#sfai-form').count() == 1
+    assert page.locator('.sfai-disclosure').is_visible(), 'S.F AI limitation disclosure must be visible above the conversation'
     assert page.get_by_text('không phải nhân viên trực tuyến', exact=False).count() > 0
     prompt = page.locator('[data-sfai-prompt]').first
     prompt.click()
