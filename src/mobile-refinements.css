@@ -507,3 +507,13 @@ html:has(.dialog-open){overflow:hidden;}
   .activity-actions .text-btn{min-height:44px;}
   .calendar-row,.habit-card,.more-link,.plan-card li{overflow-wrap:anywhere;}
 }
+
+@media(max-width:767px){
+ .route-stage:has(.sfai-workspace){animation:none!important;transform:none!important;padding-bottom:100px;}
+ .route-stage:has(.sfai-workspace) #sfai-form{
+  position:fixed;left:14px;right:14px;bottom:calc(var(--sk-mobile-nav-total) + 4px);
+  z-index:81;background:#fff;border:1px solid #dce9eb;border-radius:16px;
+  box-shadow:0 -4px 18px #244e6010;
+ }
+ .app-shell.keyboard-open #sfai-form{bottom:env(safe-area-inset-bottom,0px);}
+}
