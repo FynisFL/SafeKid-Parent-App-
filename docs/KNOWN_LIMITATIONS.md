@@ -27,8 +27,8 @@ This release contains the five approved UX remediation phases and passes its aut
 
 ## UX and QA verification
 
-- Automated tests pass 66/66. JavaScript syntax validation passes 25 files. Privacy lint passes 25 files. Static build passes.
-- Playwright browser E2E now passes in GitHub Actions. The suite checks ten routes across six compact/mobile viewport configurations, measures horizontal overflow and bottom-navigation clearance, and captures 17 screenshots. The map is a local fixture in browser E2E; this does not verify live MapTiler tiles or geocoding.
+- Automated regression tests pass 78/78. JavaScript syntax validation passes 26 files. Privacy lint passes 26 files. Static build passes.
+- Playwright browser E2E now passes in GitHub Actions. The suite checks ten routes across six compact/mobile viewport configurations, measures horizontal overflow and bottom-navigation clearance, and captures 37 screenshots. The map is a local fixture in browser E2E; this does not verify live MapTiler tiles or geocoding.
 - GitHub Actions captures the mobile route screenshots and computes `scrollWidth` for the route/viewport matrix. These browser screenshots are not a substitute for physical Android/iOS rendering or OS-level safe-area behavior.
 - Modal focus behavior is implemented and source-regression-tested; keyboard operation and screen reader behavior need actual browser/assistive-tech UAT.
 - No physical-device test has verified GPS permissions, MapTiler rendering, notifications, sound/haptics, PWA installation, safe-area behavior or geofence transitions.
