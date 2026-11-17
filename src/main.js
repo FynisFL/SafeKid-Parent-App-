@@ -197,6 +197,13 @@ function render(){
    }
   }
  }
+ const composerInPage=$('.route-stage #sfai-form',root);
+ if(replacePage){
+  $('.app-shell > #sfai-form',root)?.remove();
+  if(composerInPage&&matchMedia('(max-width:767px)').matches){
+   $('.app-shell',root).append(composerInPage);
+  }
+ }
  lastPageMarkup=pageMarkup;
  lastModalMarkup=modalMarkup;
  const stage=$('.route-stage');

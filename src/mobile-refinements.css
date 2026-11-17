@@ -525,3 +525,5 @@ html:has(.dialog-open){overflow:hidden;}
  #sfai-form{bottom:calc(80px + env(safe-area-inset-bottom,0px))!important;top:auto!important;}
  .app-shell.keyboard-open #sfai-form{bottom:0!important;}
 }
+
+@media(max-width:767px){.app-shell > #sfai-form{position:fixed;left:14px;right:14px;bottom:80px!important;top:auto;z-index:81;background:white;border:1px solid #dce9eb;border-radius:16px;}.app-shell.keyboard-open > #sfai-form{bottom:0!important;}}
