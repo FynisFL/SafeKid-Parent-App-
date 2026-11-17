@@ -447,7 +447,9 @@ function closeModalAndRestoreFocus(){
 }
 const MOBILE_TEXT_ENTRY_SELECTOR='input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),textarea,[contenteditable="true"]';
 let mobileKeyboardListenersInstalled=false;
+let modalPointerActive=false;
 function syncMobileKeyboardState(){
+ if(modalPointerActive)return;
  const shell=$('.app-shell');if(!shell)return;
  const active=document.activeElement;
  const textEntry=!!active?.matches?.(MOBILE_TEXT_ENTRY_SELECTOR)||!!active?.isContentEditable;
@@ -462,6 +464,15 @@ function syncMobileKeyboardState(){
 }
 function installMobileKeyboardStateListeners(){
  if(mobileKeyboardListenersInstalled)return;
+ document.addEventListener('pointerdown',event=>{
+  if(event.target.closest('.modal-actions'))modalPointerActive=true;
+ },{passive:true});
+ for(const event of ['pointerup','pointercancel']){
+  document.addEventListener(event,()=>{
+   if(!modalPointerActive)return;
+   setTimeout(()=>{modalPointerActive=false;syncMobileKeyboardState();},0);
+  },{passive:true});
+ }
  document.addEventListener('focusin',syncMobileKeyboardState);
  document.addEventListener('focusout',()=>requestAnimationFrame(syncMobileKeyboardState));
  window.addEventListener('resize',syncMobileKeyboardState,{passive:true});
