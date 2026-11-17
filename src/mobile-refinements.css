@@ -519,3 +519,9 @@ html:has(.dialog-open){overflow:hidden;}
 }
 
 @media(max-width:767px){.sfai-workspace,.sfai-workspace:hover{transform:none!important;filter:none!important;backdrop-filter:none!important;}}
+
+@media(max-width:767px){
+ .app-shell:has(.sfai-workspace),.main-area:has(.sfai-workspace),.route-stage:has(.sfai-workspace),.sfai-workspace{will-change:auto!important;perspective:none!important;contain:none!important;content-visibility:visible!important;}
+ #sfai-form{bottom:calc(80px + env(safe-area-inset-bottom,0px))!important;top:auto!important;}
+ .app-shell.keyboard-open #sfai-form{bottom:0!important;}
+}
