@@ -24,7 +24,7 @@ test('More hub exposes FAQ and S.F AI as independent destinations',()=>{
 test('Freemium copy clearly distinguishes active Free from planned Plus',()=>{
   assert.match(source,/Always free|Luôn miễn phí/);
   assert.match(source,/Not available for purchase|Chưa mở bán/);
-  assert.match(source,/no payments|Không có thanh toán/);
+  assert.match(source,/No payments|Không có thanh toán/i);
   assert.match(source,/Core SOS and Safe Zones stay free|Không khóa SOS và Safe Zone cơ bản/);
 });
 
