@@ -194,6 +194,12 @@ try:
     assert page.locator('#sfai-form input[name="question"]').input_value() != ''
     assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Text focus must activate keyboard shell state'
     assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must yield space while a mobile text field is focused'
+    keyboard_composer = page.locator('#sfai-form').evaluate("el => {const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,viewport:visualViewport.height};}")
+    assert keyboard_composer['top'] >= 0 and keyboard_composer['bottom'] <= keyboard_composer['viewport'] + 1, f'Composer must stay above the keyboard: {keyboard_composer}'
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    assert page.locator('#sfai-form input[name="question"]').evaluate('el => document.activeElement === el'), 'Sending with Enter must retain input focus'
+    assert page.locator('#sfai-form input[name="question"]').input_value() == ''
+    assert page.locator('.chat-message.user').count() > 0
     page.locator('#sfai-form input[name="question"]').evaluate('(el) => el.blur()')
     page.wait_for_function("!document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
     assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must return after text focus ends'
