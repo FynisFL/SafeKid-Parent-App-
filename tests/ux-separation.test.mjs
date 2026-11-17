@@ -33,6 +33,13 @@ test('S.F AI provides suggested prompts and truthful local-only support disclosu
   assert.match(sfai,/không phải nhân viên trực tuyến/);
   assert.match(sfai,/không được gửi tới đội ngũ SafeKid/);
 });
+test('Support pages render approved direct contact links without a support inbox backend',()=>{
+  assert.match(source,/function contactLinks\(\)/);
+  assert.match(source,/href="mailto:\\$\{esc\(CONTACT\.email\)\}"/);
+  assert.match(source,/href="tel:\\$\{esc\(CONTACT\.phone\)\}"/);
+  assert.match(source,/rel="noopener noreferrer"/);
+});
+
 test('Freemium copy clearly distinguishes active Free from planned Plus',()=>{
   assert.match(source,/Always free|Luôn miễn phí/);
   assert.match(source,/Not available for purchase|Chưa mở bán/);
