@@ -152,9 +152,12 @@ function renderHelp(){
  <section class="faq-contact-card card"><div><b>${S.locale==='vi'?'Chưa tìm thấy câu trả lời?':'Didn’t find your answer?'}</b><p>${S.locale==='vi'?'Chuyển sang S.F AI để được hướng dẫn hoặc kết nối kênh CSKH.':'Open S.F AI for guided help or customer-support contact options.'}</p></div><a class="btn btn-primary" href="#/sfai">${S.locale==='vi'?'Mở S.F AI':'Open S.F AI'} ${icon('arrow',15)}</a></section>
  <section class="card support-card"><h2>${t('support')}</h2>${contactLinks()}</section>`;
 }
+function normalizeFaqSearch(value){
+ return String(value??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLocaleLowerCase().trim().replace(/\\s+/g,' ');
+}
 function renderFaqItems(items,q=''){
- const query=q.toLocaleLowerCase();
- const filtered=items.filter(x=>(x.question+' '+x.answer).toLocaleLowerCase().includes(query));
+ const query=normalizeFaqSearch(q);
+ const filtered=items.filter(x=>normalizeFaqSearch(x.question+' '+x.answer).includes(query));
  if(!filtered.length)return `<div class="faq-empty card"><span>${icon('search',24)}</span><b>${S.locale==='vi'?'Không tìm thấy câu hỏi phù hợp':'No matching questions'}</b><p>${S.locale==='vi'?'Thử từ khóa ngắn hơn hoặc mở S.F AI để được hướng dẫn.':'Try a shorter keyword or open S.F AI for guidance.'}</p><a href="#/sfai" class="text-link">S.F AI ${icon('arrow',14)}</a></div>`;
  return filtered.map((x,i)=>`<details class="faq-item"><summary><span class="faq-index">${String(i+1).padStart(2,'0')}</span><span>${esc(x.question)}</span><span class="faq-chevron">${icon('chevronDown',17)}</span></summary><div class="faq-answer"><p>${esc(x.answer).replace(/\\n/g,'<br>')}</p></div></details>`).join('');
 }
@@ -319,7 +322,7 @@ function wireEvents(){
   }
   if(e.target.id==='zone-place-search'&&e.key==='Enter'){e.preventDefault();searchZonePlaces().catch(err=>toast(err.message,'error'));}
  });
- root.addEventListener('input',e=>{if(e.target.id==='zone-radius-range'){updateZoneRadius(Number(e.target.value));return;}if(e.target.id==='faq-search'){S.faqSearch=e.target.value;const items=S.content?.[S.locale]?.faq||[];const target=$('#faq-items');if(target)target.innerHTML=renderFaqItems(items,S.faqSearch);const count=$('#faq-count');if(count)count.textContent=`${items.filter(x=>(x.question+' '+x.answer).toLocaleLowerCase().includes(S.faqSearch.toLocaleLowerCase())).length} ${S.locale==='vi'?'câu hỏi':'questions'}`;}});
+ root.addEventListener('input',e=>{if(e.target.id==='zone-radius-range'){updateZoneRadius(Number(e.target.value));return;}if(e.target.id==='faq-search'){S.faqSearch=e.target.value;const items=S.content?.[S.locale]?.faq||[];const target=$('#faq-items');if(target)target.innerHTML=renderFaqItems(items,S.faqSearch);const count=$('#faq-count');if(count)count.textContent=`${items.filter(x=>normalizeFaqSearch(x.question+' '+x.answer).includes(normalizeFaqSearch(S.faqSearch))).length} ${S.locale==='vi'?'câu hỏi':'questions'}`;}});
  root.addEventListener('change',async e=>{if(e.target.name==='reminderEnabled'){const wrap=$('#reminder-time-wrap');if(wrap)wrap.hidden=!e.target.checked;}if(e.target.name==='repeat'){const wrap=$('#task-weekday-wrap');if(wrap)wrap.hidden=e.target.value!=='weekly';}if(e.target.dataset.pref){const key=e.target.dataset.pref;S.prefs[key]=e.target.checked;if(key==='sound'&&!e.target.checked){AudioAdapter.stopSosAlarm();const active=findOpenSosEvent(S.sosEvents);if(active){active.alarmMuted=true;active.soundAlertStatus='muted_in_settings';await put('sosEvents',active);}}await savePrefs();}if(e.target.id==='backup-file'&&e.target.files?.[0]){modalReturnFocus='import-backup';S.pendingBackupFile=e.target.files[0];S.modal={type:'import-confirm'};render();}});
  root.addEventListener('pointerdown',e=>{const b=e.target.closest('#sos-hold');if(!b)return;holdFired=false;void AudioAdapter.prepare();try{b.setPointerCapture(e.pointerId);}catch{}b.classList.add('holding');holdTimer=setTimeout(async()=>{holdFired=true;b.classList.remove('holding');try{await triggerSOS();}catch(error){toast(error.message||t('error'),'error');}},1500);});
  const endHold=()=>{if(holdTimer)clearTimeout(holdTimer);holdTimer=null;$('#sos-hold')?.classList.remove('holding');};root.addEventListener('pointerup',endHold);root.addEventListener('pointercancel',endHold);root.addEventListener('lostpointercapture',endHold);
