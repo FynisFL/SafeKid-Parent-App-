@@ -318,3 +318,8 @@ body{overflow-x:clip;}
 .app-shell.keyboard-open .modal-backdrop{padding-bottom:max(8px,env(safe-area-inset-bottom,0px));}
 .app-shell.keyboard-open .modal{max-height:calc(100dvh - 12px);}
 .app-shell.keyboard-open .modal-body{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+
+
+/* SOS contrast: white labels remain legible on the emergency action fill. */
+.sos-hold{background:linear-gradient(145deg,#C7354E,#A92F45);border:1px solid #A92F45;color:#FFFFFF;}
+.sos-hold small{color:#FFFFFF;opacity:.94;}
