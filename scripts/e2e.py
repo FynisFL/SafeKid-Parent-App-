@@ -224,7 +224,7 @@ try:
     page.locator('#device-form [name="serialOrDeviceCode"]').fill('SAFEKID-' + '1234567890' * 6)
     page.locator('button[form="device-form"][type="submit"]').click()
     page.wait_for_timeout(500)
-    print('DEVICE STATE', page.locator('body').inner_text()[-6500:], flush=True)
+    print('DEVICE STATE', page.locator('#device-form').evaluate("el => [...el.elements].map(x=>({name:x.name,value:x.value,valid:x.validity?.valid,message:x.validationMessage}))"), flush=True)
     page.locator('.device-card [data-action^="device-detail:"]').wait_for(timeout=5000)
     page.locator('.device-card [data-action^="device-detail:"]').click()
     page.wait_for_url(lambda url: '#/watch-passport-detail?device=' in url)
