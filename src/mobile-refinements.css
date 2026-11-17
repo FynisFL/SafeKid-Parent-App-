@@ -234,7 +234,9 @@ body{overflow-x:clip;}
   .modal-body{padding:15px;max-height:calc(92dvh - 132px);}
   .modal-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-top:8px;}
   .modal-actions .btn{min-width:0;width:100%;min-height:46px;}
-  body:has(.chat-form input:focus) .mobile-nav{transform:translateY(110%);pointer-events:none;}
+  .sfai-workspace{display:flex;flex-direction:column;min-height:68dvh;}
+  .sfai-messages{flex:1;min-height:240px;overflow-y:auto;overscroll-behavior:contain;}
+  .chat-form{position:sticky;bottom:0;background:#fff;}
   .mobile-nav{transition:transform .18s ease;}
 }
 @media(max-width:359px){

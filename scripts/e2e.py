@@ -87,7 +87,7 @@ try:
     results.append('Onboarding completion -> app shell transition')
 
     # More hub and Safe Zone: test that an unselected location cannot save.
-    page.locator('a[href="#/more"]').click()
+    page.locator('.mobile-nav a[href="#/more"]').click()
     page.locator('.more-hub a[href="#/safe-zones"]').click()
     page.locator('[data-action="modal-zone"]').first.click()
     page.locator('input[name="name"]').fill('QA Zone')
