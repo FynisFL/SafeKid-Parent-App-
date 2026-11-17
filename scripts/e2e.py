@@ -148,11 +148,11 @@ try:
     page.get_by_text('Đang có một sự kiện SOS chưa xử lý', exact=False).wait_for(timeout=4000)
     assert page.locator('[data-action="sos-confirm"]').count() == 0
     page.locator('[data-action^="sos-ack:"]').first.click()
-    assert page.get_by_text('Bạn đã xác nhận SOS', exact=False).count() > 0
-    assert page.locator('[data-action="sos-confirm"]').count() == 0
+    page.get_by_text('Bạn đã xác nhận SOS', exact=False).wait_for(timeout=3000)
+    assert page.locator('[data-action="sos-confirm"]').count() == 0, 'Acknowledged SOS must remain open'
     page.locator('[data-action^="sos-resolve:"]').first.click()
-    page.wait_for_timeout(200)
-    assert page.locator('[data-action="sos-confirm"]').count() == 1
+    page.locator('[data-action="sos-confirm"]').wait_for(state='visible',timeout=3000)
+    assert page.locator('[data-action="sos-confirm"]').count() == 1, 'Resolving SOS should return to idle activation state'
     results.append('SOS two-step activation, duplicate guard, acknowledge and resolve')
 
     # Dedicated support destinations and discoverability.
