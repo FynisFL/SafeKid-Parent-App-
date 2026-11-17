@@ -133,7 +133,7 @@ try:
     page.locator('input[name="title"]').focus()
     keyboard_state = page.evaluate("""() => {const nav=document.querySelector('.mobile-nav');return {width:innerWidth,mobile:matchMedia('(max-width: 767px)').matches,active:document.activeElement?.outerHTML?.slice(0,180),shell:document.querySelector('.app-shell')?.className,focused:document.activeElement?.getAttribute('name'),navDisplay:nav?getComputedStyle(nav).display:null,navParent:nav?.parentElement?.className,styles:[...document.styleSheets].map(s=>({href:s.href,keyboardRule:(()=>{try{return [...s.cssRules].some(r=>r.selectorText==='.app-shell.keyboard-open .mobile-nav')}catch{return 'blocked'}})()}))};}""")
     assert 'keyboard-open' in (keyboard_state['shell'] or ''), f'Task form focus must activate keyboard shell state: {keyboard_state}'
-    assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must be hidden while task form input is focused'
+    assert not page.locator('.mobile-nav').is_visible(), f'Bottom navigation must be hidden while task form input is focused: {keyboard_state}'
     submit_rect = page.locator('#task-form button[type="submit"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
     assert submit_rect['visible'] and submit_rect['bottom'] <= 560, f'Task submit action must remain inside keyboard-visible viewport: {submit_rect}'
     page.set_viewport_size({'width':390,'height':844})
