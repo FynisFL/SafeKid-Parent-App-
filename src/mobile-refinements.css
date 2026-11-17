@@ -272,3 +272,15 @@ body{overflow-x:clip;}
   .tabbar{grid-template-columns:repeat(5,minmax(0,1fr));}
   .tabbar a{font-size:9px;padding-inline:1px;}
 }
+
+/* Home hierarchy: parent-phone status before secondary shortcuts; no decorative hero in the first mobile flow. */
+.home-intro .intro-date{font-size:11px;gap:8px;padding:8px 12px;border-radius:999px;display:inline-flex;align-items:center;background:#fff;color:#617A82;}
+.home-grid-secondary{margin-top:10px;}
+@media(max-width:767px){
+  .family-hero{display:none!important;}
+  .home-intro{gap:9px;margin-bottom:13px;}
+  .home-intro .intro-date{font-size:11px;gap:8px;padding:8px 12px;width:max-content;}
+  .home-section-row{margin:12px 0 10px;}
+  .home-grid{margin-bottom:0;}
+  .home-grid-secondary{margin-top:12px;}
+}

@@ -188,6 +188,9 @@ try:
           labels = page.locator('.mobile-quick-actions a b').all_text_contents()
           label_state = page.locator('.mobile-quick-actions a b').evaluate_all("els => els.map(el => ({text:el.textContent.trim(),whiteSpace:getComputedStyle(el).whiteSpace,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth}))")
           assert len(labels) == 4 and all(x['whiteSpace'] == 'normal' for x in label_state), f'Home quick-action labels must wrap, not clip: {label_state}'
+          hierarchy = page.evaluate("""() => {const box=s=>document.querySelector(s)?.getBoundingClientRect();return {location:box('.location-feature')?.top,quick:box('.mobile-quick-actions')?.top,support:box('.support-entry-card')?.top,hero:getComputedStyle(document.querySelector('.family-hero')).display,date:document.querySelector('.intro-date')?.textContent.trim(),dateFont:getComputedStyle(document.querySelector('.intro-date')).fontSize};}""")
+          assert hierarchy['location'] < hierarchy['quick'] < hierarchy['support'] and hierarchy['hero'] == 'none', f'Home must prioritize parent GPS status and actions over decoration: {hierarchy}'
+          assert hierarchy['date'] and hierarchy['dateFont'] != '0px', f'Home date label must be readable: {hierarchy}'
         if route == '#/growth' and width >= 360:
           tabs = page.locator('.tabbar a').evaluate_all("els => els.map(el => ({text:el.textContent.trim(),left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right}))")
           assert len(tabs) == 5 and all(x['left'] >= 0 and x['right'] <= width for x in tabs), f'Growth tabs must all fit at {width}px: {tabs}'
