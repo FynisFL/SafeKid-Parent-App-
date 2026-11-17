@@ -73,7 +73,7 @@ test('Mobile text-entry focus hides the bottom navigation and restores it after 
   assert.match(source,/document\.addEventListener\('focusin',syncMobileKeyboardState\)/);
   assert.match(source,/window\.visualViewport\.addEventListener\('resize',syncMobileKeyboardState/);
   assert.match(refinements,/\.app-shell\.keyboard-open \.mobile-nav\{display:none!important;\}/);
-  assert.match(refinements,/\.app-shell\.keyboard-open \.modal\{max-height:calc\(100dvh - 12px\)\}/);
+  assert.match(refinements,/\.app-shell\.keyboard-open \.modal\{max-height:calc\(100dvh - 12px\);\}/);
 });
 test('Service worker invalidates the previous shell cache and precaches the mobile refinement stylesheet',()=>{
   assert.match(serviceWorker,/safekid-pwa-v7-mobile-shell-r1/);
