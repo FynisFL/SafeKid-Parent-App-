@@ -132,7 +132,7 @@ try:
     page.locator('.intro-actions [data-action="modal-task"]').click()
     page.locator('input[name="title"]').focus()
     page.wait_for_function("document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
-    keyboard_state = page.evaluate("""() => ({width:innerWidth,mobile:matchMedia('(max-width: 767px)').matches,active:document.activeElement?.outerHTML?.slice(0,180),shell:document.querySelector('.app-shell')?.className,focused:document.activeElement?.getAttribute('name')})""")
+    keyboard_state = page.evaluate("""() => {const nav=document.querySelector('.mobile-nav');return {width:innerWidth,mobile:matchMedia('(max-width: 767px)').matches,active:document.activeElement?.outerHTML?.slice(0,180),shell:document.querySelector('.app-shell')?.className,focused:document.activeElement?.getAttribute('name'),navDisplay:nav?getComputedStyle(nav).display:null,navParent:nav?.parentElement?.className,styles:[...document.styleSheets].map(s=>({href:s.href,keyboardRule:(()=>{try{return [...s.cssRules].some(r=>r.selectorText==='.app-shell.keyboard-open .mobile-nav')}catch{return 'blocked'}})()}))};}""")
     assert 'keyboard-open' in (keyboard_state['shell'] or ''), f'Task form focus must activate keyboard shell state: {keyboard_state}'
     assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must be hidden while task form input is focused'
     submit_rect = page.locator('#task-form button[type="submit"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
