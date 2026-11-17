@@ -158,7 +158,7 @@ function renderHelp(){
  <section class="card support-card"><h2>${t('support')}</h2>${contactLinks()}</section>`;
 }
 function normalizeFaqSearch(value){
- return String(value??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLocaleLowerCase().trim().replace(/\\s+/g,' ');
+ return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLocaleLowerCase().trim().replace(/\s+/g,' ');
 }
 function renderFaqItems(items,q=''){
  const query=normalizeFaqSearch(q);

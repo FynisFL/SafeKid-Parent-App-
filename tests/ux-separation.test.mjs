@@ -33,6 +33,12 @@ test('S.F AI provides suggested prompts and truthful local-only support disclosu
   assert.match(sfai,/không phải nhân viên trực tuyến/);
   assert.match(sfai,/không được gửi tới đội ngũ SafeKid/);
 });
+test('FAQ search normalization removes Vietnamese diacritics and collapses whitespace',()=>{
+  const normalizer=source.slice(source.indexOf('function normalizeFaqSearch'),source.indexOf('function renderFaqItems'));
+  assert.match(normalizer,/normalize\('NFD'\)\.replace\(\/\[\\u0300-\\u036f\]\/g/);
+  assert.match(normalizer,/replace\(\/\\s\+\/g/);
+});
+
 test('Support pages render approved direct contact links without a support inbox backend',()=>{
   assert.ok(source.includes('function contactLinks()'));
   assert.ok(source.includes('href="mailto:${esc(CONTACT.email)}"'));
