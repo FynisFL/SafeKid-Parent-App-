@@ -517,3 +517,5 @@ html:has(.dialog-open){overflow:hidden;}
  }
  .app-shell.keyboard-open #sfai-form{bottom:env(safe-area-inset-bottom,0px);}
 }
+
+@media(max-width:767px){.sfai-workspace,.sfai-workspace:hover{transform:none!important;filter:none!important;backdrop-filter:none!important;}}
