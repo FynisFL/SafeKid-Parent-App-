@@ -132,7 +132,8 @@ try:
     page.locator('.intro-actions [data-action="modal-task"]').click()
     page.locator('input[name="title"]').focus()
     page.wait_for_function("document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
-    assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Task form focus must activate keyboard shell state'
+    keyboard_state = page.evaluate("""() => ({width:innerWidth,mobile:matchMedia('(max-width: 767px)').matches,active:document.activeElement?.outerHTML?.slice(0,180),shell:document.querySelector('.app-shell')?.className,focused:document.activeElement?.getAttribute('name')})""")
+    assert 'keyboard-open' in (keyboard_state['shell'] or ''), f'Task form focus must activate keyboard shell state: {keyboard_state}'
     assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must be hidden while task form input is focused'
     submit_rect = page.locator('#task-form button[type="submit"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
     assert submit_rect['visible'] and submit_rect['bottom'] <= 560, f'Task submit action must remain inside keyboard-visible viewport: {submit_rect}'
