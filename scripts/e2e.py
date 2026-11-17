@@ -210,7 +210,7 @@ try:
         assert page.locator('.plan-footer-plus').get_by_text('Chưa mở bán', exact=False).count() == 1, 'Plus must remain clearly marked as not for sale'
         assert page.locator('.plan-footer-plus').get_by_text('Không có thanh toán trong ứng dụng', exact=True).count() == 1, 'No checkout/payment must be implied'
         assert page.locator('.plan-plus button').count() == 0, 'No fake Plus purchase CTA may appear'
-      for width,height in [(320,780),(360,800),(375,812),(390,844),(430,932)]:
+      for width,height in [(320,720),(320,780),(360,800),(375,812),(390,844),(430,932)]:
         page.set_viewport_size({'width':width,'height':height})
         page.wait_for_timeout(50)
         if route == '#/home':
