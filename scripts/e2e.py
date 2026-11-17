@@ -201,9 +201,15 @@ try:
     results.append('FAQ remains independent, searchable and links to S.F AI without embedding chat')
 
     # Core route mobile geometry: no horizontal overflow and final content scrolls above fixed nav.
-    for route in ['#/home', '#/location', '#/sos', '#/growth', '#/more', '#/sfai', '#/help']:
+    for route in ['#/home', '#/location', '#/safe-zones', '#/sos', '#/growth', '#/more', '#/sfai', '#/help', '#/plans', '#/profile']:
       page.goto('http://127.0.0.1:4173/' + route, wait_until='domcontentloaded')
       page.wait_for_timeout(500)
+      if route == '#/plans':
+        assert page.locator('.plan-free').is_visible() and page.locator('.plan-plus').is_visible(), 'Free and planned Plus cards must both be visible'
+        assert page.get_by_text('Không khóa SOS và Safe Zone cơ bản', exact=True).count() == 1, 'Core safety must remain Free'
+        assert page.locator('.plan-footer-plus').get_by_text('Chưa mở bán', exact=False).count() == 1, 'Plus must remain clearly marked as not for sale'
+        assert page.locator('.plan-footer-plus').get_by_text('Không có thanh toán trong ứng dụng', exact=True).count() == 1, 'No checkout/payment must be implied'
+        assert page.locator('.plan-plus button').count() == 0, 'No fake Plus purchase CTA may appear'
       for width,height in [(320,780),(360,800),(375,812),(390,844),(430,932)]:
         page.set_viewport_size({'width':width,'height':height})
         page.wait_for_timeout(50)
