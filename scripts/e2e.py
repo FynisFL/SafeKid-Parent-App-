@@ -210,6 +210,7 @@ try:
         assert page.locator('.plan-footer-plus').get_by_text('Chưa mở bán', exact=False).count() == 1, 'Plus must remain clearly marked as not for sale'
         assert page.locator('.plan-footer-plus').get_by_text('Không có thanh toán trong ứng dụng', exact=True).count() == 1, 'No checkout/payment must be implied'
         assert page.locator('.plan-plus button').count() == 0, 'No fake Plus purchase CTA may appear'
+        results.append('Plans Free/Plus transparency: core safety remains Free; Plus is planned with no checkout')
       for width,height in [(320,720),(320,780),(360,800),(375,812),(390,844),(430,932)]:
         page.set_viewport_size({'width':width,'height':height})
         page.wait_for_timeout(50)
@@ -253,7 +254,7 @@ try:
       page.wait_for_timeout(120)
       page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390-viewport.png'))
       page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390.png'),full_page=True)
-    results.append('Mobile route geometry matrix: 7 routes × 5 phone widths; overflow and final-content/nav clearance')
+    results.append('Mobile route geometry matrix: 10 routes × 6 phone viewports; overflow and final-content/nav clearance')
 
     # Post-setup responsive pages at mobile, tablet and desktop widths.
     for width, height in [(320,780),(360,800),(390,844),(430,932),(767,900),(768,900),(1024,900),(1280,900),(1440,900),(1920,1080)]:
@@ -275,4 +276,4 @@ except Exception as e:
 
 print('E2E PASSED')
 for item in results: print(' - ' + item)
-print(f'Screenshots saved: {len(list(SCREENSHOTS.glob("v7-*.png")))}')
+print(f'Screenshots saved: {len(list(SCREENSHOTS.glob("*.png")))}')
