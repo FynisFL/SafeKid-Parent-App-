@@ -14,8 +14,8 @@ Release scope: all five phases approved from the V6 UX/UI audit.
 | Static PWA build | **PASS** | `npm run build`; `dist/` regenerated and MapTiler default style injected. |
 | CSS parser | **PASS** | PostCSS parsed 1,662 rules, 38 media queries and 11 keyframes with no parser error. |
 | Local HTTP smoke | **PASS — 8/8 HTTP 200** | `/`, `/src/main.js`, Safe Zone and SOS domain modules, geocoding service, mascot, `/sw.js`, `/manifest.webmanifest`. |
-| Playwright E2E | **BLOCKED** | First `page.goto()` failed with `net::ERR_BLOCKED_BY_ADMINISTRATOR` for localhost. No browser flow is marked passed. |
-| Rendered screenshot / computed overflow | **NOT VERIFIED** | No valid screenshots or `scrollWidth` evidence could be obtained because browser navigation is blocked. |
+| Playwright E2E | **PASS** | GitHub Actions run #44115276941: ten routes × six mobile viewport configurations, horizontal-overflow and bottom-navigation clearance assertions, Plans/Free-Plus transparency, S.F AI composer visibility; 17 screenshots uploaded. |
+| Rendered screenshot / computed overflow | **PASS — CI matrix** | Playwright captured 17 screenshots and measured `scrollWidth` / fixed-nav geometry for the route matrix. The map is a local fixture; live provider rendering remains separate. |
 | MapTiler live render/geocoding | **NOT VERIFIED** | Source configuration and mocked-flow test exist; live browser network/tile rendering requires a permitted browser and restricted valid key. |
 | Physical phone GPS, notification and SOS alarm | **NOT VERIFIED** | Requires real HTTPS deploy and iOS Safari/Android Chrome devices. |
 
@@ -109,10 +109,43 @@ npm test          PASS — 66/66
 npm run typecheck PASS — 25 JavaScript syntax files
 npm run lint      PASS — 25 JavaScript files
 npm run build     PASS — static PWA generated in dist/
-npm run test:e2e BLOCKED — ERR_BLOCKED_BY_ADMINISTRATOR at localhost navigation
+npm run test:e2e PASS — GitHub Actions run #44115276941; 10 routes × 6 phone viewports; 17 screenshots
 ```
 
-HTTP smoke test: 8/8 resources returned HTTP 200. Build output includes `safekid-pwa-v7-full-ux-fix` and MapTiler style URL. `.env` is excluded from source distribution.
+HTTP smoke test: 8/8 resources returned HTTP 200. Build output includes `safekid-pwa-v7-mobile-shell-r2` and the bundled MapTiler style URL. `.env` is excluded from source distribution.
+
+
+## 7. Mobile-first redesign follow-on (PR #9)
+
+### Phase 0 — Baseline and branch safety
+- Redesign remained isolated on `redesign/mobile-first-ux-v11`; production `main` was not changed during implementation.
+- The branch was validated against the existing V7 source and product boundaries before merging.
+
+### Phase 1 — Shared mobile shell
+- Five primary destinations remain Home, Location, SOS, Growth and More.
+- Mobile text-entry focus hides the fixed bottom navigation and restores it after blur; modal sizing follows the dynamic viewport.
+- Modal initial focus no longer steals focus from a form control already selected by the user.
+- Service Worker precaches the mobile refinement stylesheet and uses cache revision `safekid-pwa-v7-mobile-shell-r2`.
+
+### Phase 2 — Core screen redesign
+- Mobile layouts cover Home, Location, Safe Zones, SOS, Growth, More, FAQ, S.F AI, Plans and Profile/Settings.
+- Browser checks cover 320×720, 320×780, 360×800, 375×812, 390×844 and 430×932, plus the existing tablet/desktop matrix.
+- Fixed bottom navigation clearance and horizontal overflow are measured, not inferred from CSS parsing alone.
+
+### Phase 3 — Freemium and content alignment
+- Free explicitly includes parent-phone GPS, core Safe Zones, same-device SOS, Growth basics and local data.
+- Plus remains a planned, not-for-sale extension. No checkout, payment, renewal or feature lock is active.
+- SOS and core Safe Zones remain Free; the app does not imply child/watch tracking or background geofencing.
+
+### Phase 4 — Forms, accessibility and motion
+- Keyboard-aware shell and modal focus behavior are covered by regression/E2E tests.
+- Reduced-motion styles remain in place; SOS activation has no entrance/pulse/hover transform.
+- SOS hold button now uses a darker emergency fill with white labels. A contrast regression test checks both gradient colors against WCAG AA 4.5:1 for normal text.
+
+### Phase 5 — UAT and regression
+- Regression suite: 78 tests after the SOS contrast check was added; final CI run must remain green.
+- Browser E2E checks ten routes across six mobile viewport configurations and captures 17 screenshots.
+- Real MapTiler tiles/geocoding, physical Android/iOS GPS/notifications/audio/haptics and VoiceOver/TalkBack remain manual device UAT; they are not claimed as passed.
 
 ## 6. Release interpretation
 
