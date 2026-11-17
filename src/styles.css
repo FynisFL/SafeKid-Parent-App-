@@ -1470,3 +1470,17 @@ button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 @media(prefers-reduced-motion:reduce){
  .faq-item,.faq-chevron,.faq-answer,.chat-message,.plan-card,.sfai-faq-link svg:last-child{animation:none!important;transition:none!important;transform:none!important}
 }
+
+
+/* Motion budget: route entrance runs only on an actual route change, not every state render. */
+.route-stage,.page-intro{animation:none!important}
+.route-stage.route-enter:not(:has(.sos-panel)){animation:route-arrive .24s cubic-bezier(.2,.75,.25,1) both!important}
+.chat-message{animation:none}
+.chat-message:last-child{animation:chat-message-in .18s ease both}
+@media(max-width:767px){
+ .route-stage:not(:has(.sos-panel)){animation:none!important}
+ .route-stage.route-enter:not(:has(.sos-panel)){animation:sk-mobile-route-in .18s ease-out both!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .route-stage.route-enter,.chat-message:last-child{animation:none!important}
+}
