@@ -84,3 +84,16 @@ test('Modal initial focus does not steal focus from a control the user already f
   const focus=source.slice(source.indexOf('function focusInitialModalControl()'),source.indexOf('function closeModalAndRestoreFocus()'));
   assert.match(focus,/dialog\.contains\(document\.activeElement\)/);
 });
+
+test('SOS hold action uses accessible high-contrast labels on its emergency fill',()=>{
+  const rule=refinements.match(/\\.sos-hold\\{([^}]*)\\}\\s*\\.sos-hold small\\{([^}]*)\\}/s);
+  assert.ok(rule,'SOS contrast override exists');
+  const colors=[...rule[1].matchAll(/#([0-9A-Fa-f]{6})/g)].map(x=>x[1]);
+  const foreground=rule[1].match(/color:#([0-9A-Fa-f]{6})/i)?.[1];
+  const smallForeground=rule[2].match(/color:#([0-9A-Fa-f]{6})/i)?.[1];
+  assert.ok(foreground&&smallForeground,'both main and helper text colors are explicit');
+  const luminance=hex=>{const rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;};
+  for(const bg of colors){const ratio=(Math.max(luminance('FFFFFF'),luminance(bg))+.05)/(Math.min(luminance('FFFFFF'),luminance(bg))+.05);assert.ok(ratio>=4.5,'white SOS label contrast '+ratio.toFixed(2)+':1 against #'+bg);}
+  assert.equal(foreground.toUpperCase(),'FFFFFF');
+  assert.equal(smallForeground.toUpperCase(),'FFFFFF');
+});
