@@ -1,0 +1,20 @@
+{
+  "name": "safekid-parent-app",
+  "version": "0.7.0",
+  "private": true,
+  "description": "SafeKid Parent App — V7 full mobile-first UX remediation and QA",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node server.mjs --dir dist",
+    "typecheck": "node scripts/typecheck.mjs",
+    "lint": "node scripts/lint.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:e2e": "node scripts/e2e.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
