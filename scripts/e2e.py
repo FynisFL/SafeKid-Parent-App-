@@ -130,6 +130,8 @@ try:
     page.locator('.mobile-nav a[href="#/growth"]').click()
     page.set_viewport_size({'width':390,'height':560})
     page.locator('.intro-actions [data-action="modal-task"]').click()
+    page.locator('input[name="title"]').focus()
+    page.wait_for_function("document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
     assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Task form focus must activate keyboard shell state'
     assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must be hidden while task form input is focused'
     submit_rect = page.locator('#task-form button[type="submit"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
