@@ -47,7 +47,7 @@ MAPLIBRE_MOCK = r'''(() => {
 
 try:
   with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True, executable_path='/usr/bin/chromium', args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server'])
+    browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server'])
     context = browser.new_context(viewport={'width':390, 'height':844}, device_scale_factor=1, is_mobile=True, has_touch=True)
     context.add_init_script(MAPLIBRE_MOCK)
     page = context.new_page()
@@ -153,6 +153,54 @@ try:
     page.wait_for_timeout(200)
     assert page.locator('[data-action="sos-confirm"]').count() == 1
     results.append('SOS two-step activation, duplicate guard, acknowledge and resolve')
+
+    # Dedicated support destinations and discoverability.
+    page.locator('a[href="#/home"]').click()
+    page.locator('.support-entry-card[href="#/sfai"]').first.wait_for(timeout=3000)
+    page.locator('.support-entry-card[href="#/sfai"]').first.click()
+    page.get_by_role('heading', name='S.F AI', exact=True).wait_for(timeout=3000)
+    assert page.locator('#sfai-form').count() == 1
+    assert page.get_by_text('không phải nhân viên trực tuyến', exact=False).count() > 0
+    prompt = page.locator('[data-sfai-prompt]').first
+    prompt.click()
+    assert page.locator('#sfai-form input[name="question"]').input_value() != ''
+    results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer')
+    page.locator('a[href="#/more"]').click()
+    page.locator('.support-entry-card--hub[href="#/sfai"]').wait_for(timeout=3000)
+    page.locator('a[href="#/help"]').click()
+    page.get_by_role('heading', name='Câu hỏi thường gặp', exact=True).wait_for(timeout=3000)
+    assert page.locator('#faq-search').count() == 1
+    assert page.locator('#sfai-form').count() == 0
+    page.locator('#faq-search').fill('vi tri')
+    page.wait_for_timeout(100)
+    page.locator('a[href="#/sfai"]').last.wait_for(timeout=3000)
+    results.append('FAQ remains independent, searchable and links to S.F AI without embedding chat')
+
+    # Core route mobile geometry: no horizontal overflow and final content scrolls above fixed nav.
+    for route in ['#/home', '#/location', '#/sos', '#/growth', '#/more', '#/sfai', '#/help']:
+      page.goto('http://127.0.0.1:4173/' + route, wait_until='domcontentloaded')
+      page.wait_for_timeout(100)
+      for width,height in [(320,780),(360,800),(375,812),(390,844),(430,932)]:
+        page.set_viewport_size({'width':width,'height':height})
+        page.wait_for_timeout(50)
+        metrics=page.evaluate('''() => {
+          const nav=document.querySelector('.mobile-nav');
+          const wrap=document.querySelector('.page-wrap');
+          return {viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth,
+            nav:nav?{top:nav.getBoundingClientRect().top,height:nav.getBoundingClientRect().height}:null,
+            last:wrap?.lastElementChild?{bottom:wrap.lastElementChild.getBoundingClientRect().bottom}:null};
+        }''')
+        assert metrics['scroll'] <= metrics['viewport'], f'overflow {route} at {width}px: {metrics}'
+        page.evaluate('window.scrollTo(0,document.documentElement.scrollHeight)')
+        page.wait_for_timeout(30)
+        bottom=page.evaluate('''() => {
+          const nav=document.querySelector('.mobile-nav'), wrap=document.querySelector('.page-wrap');
+          return nav&&wrap?.lastElementChild ? wrap.lastElementChild.getBoundingClientRect().bottom <= nav.getBoundingClientRect().top + 1 : true;
+        }''')
+        assert bottom, f'Bottom nav overlaps final content {route} at {width}px'
+      page.set_viewport_size({'width':390,'height':844})
+      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390.png'),full_page=True)
+    results.append('Mobile route geometry matrix: 7 routes × 5 phone widths; overflow and final-content/nav clearance')
 
     # Post-setup responsive pages at mobile, tablet and desktop widths.
     for width, height in [(320,780),(360,800),(390,844),(430,932),(767,900),(768,900),(1024,900),(1280,900),(1440,900),(1920,1080)]:
