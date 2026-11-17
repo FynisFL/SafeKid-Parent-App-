@@ -128,7 +128,7 @@ try:
 
     # Growth form conditional UI.
     page.locator('.mobile-nav a[href="#/growth"]').click()
-    page.locator('[data-action="modal-task"]').click()
+    page.locator('.intro-actions [data-action="modal-task"]').click()
     assert page.locator('#reminder-time-wrap').is_hidden()
     page.locator('input[name="reminderEnabled"]').check()
     assert page.locator('#reminder-time-wrap').is_visible()
