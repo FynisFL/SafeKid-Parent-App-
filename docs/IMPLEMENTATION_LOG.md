@@ -42,7 +42,7 @@ Release: V7 UX/UI remediation
 |---|---|---|---|
 | 0 | Baseline / branch safety | Kept changes on `redesign/mobile-first-ux-v11`; no production-main edits during implementation. | PR base/head and branch state verified. |
 | 1 | Shared mobile shell | Five-item nav preserved; nav yields while a text field is focused; modal viewport/focus behavior fixed; Service Worker precaches refinement CSS and cache revision is now `safekid-pwa-v7-mobile-shell-r2`. | Keyboard focus/blur E2E and modal regression checks. |
-| 2 | Core screen redesign | Responsive refinements for Home, Location, Safe Zones, SOS, Growth, More, FAQ, S.F AI, Plans and Profile/Settings. | Ten routes × six mobile viewport configurations; overflow and bottom-nav geometry assertions; 17 screenshots. |
+| 2 | Core screen redesign | Responsive refinements for Home, Location, Safe Zones, SOS, Growth, More, FAQ, S.F AI, Plans and Profile/Settings. | Ten routes × six mobile viewport configurations; overflow and bottom-nav geometry assertions; 37 screenshots. |
 | 3 | Freemium/content | Free retains parent-phone GPS, core Safe Zones, same-device SOS, Growth basics and local storage. Plus is planned/not for sale; no checkout or safety-feature gating. | E2E checks both plan cards, Free safety inclusions, no purchase CTA and no in-app payment. |
 | 4 | Forms/accessibility/motion | Keyboard-aware nav, modal focus preservation, reduced-motion rules and improved SOS hold text contrast. | Keyboard/modal E2E, reduced-motion source regression, SOS contrast test. |
 | 5 | UAT/regression | Added S.F AI composer visibility and Plans/Profile/Safe Zones to the mobile route matrix; updated UAT checklist. | GitHub Actions browser E2E; real device and live MapTiler UAT remain pending. |
