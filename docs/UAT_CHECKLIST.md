@@ -6,7 +6,7 @@
 
 - [ ] Deploy the contents of `dist/` to an HTTPS origin (do not deploy source root as the web root).
 - [ ] Restrict the browser MapTiler key to the exact HTTPS origin/referrer.
-- [ ] Open once while online so service worker `safekid-pwa-v7-full-ux-fix` installs.
+- [ ] Open once while online so service worker `safekid-pwa-v7-mobile-shell-r2` installs.
 - [ ] Use a fresh browser profile for first-run tests; record device model, OS, browser version and date.
 - [ ] Use only safe test locations and test contacts. Export a backup before destructive reset/import scenarios.
 - [ ] Run a second pass with OS/browser reduced-motion enabled.
@@ -90,7 +90,7 @@
 - [ ] Verify reduced-motion: nonessential entrance, hover and continuous effects stop; state changes remain immediate; SOS has no blocking motion.
 - [ ] Run VoiceOver (iOS), TalkBack (Android) or desktop screen reader for headings, input labels, dialogs, alerts and status announcements.
 
-## Phase 6 — Freemium transparency and S.F AI mobile composer
+## Mobile redesign follow-up — Freemium transparency and S.F AI mobile composer
 
 - [ ] Open Plans from More. Confirm Free includes parent-phone GPS, core Safe Zones, same-device SOS, Growth basics and local storage.
 - [ ] Confirm Plus is labelled planned / not available for purchase; no checkout, payment, renewal or locked safety feature is presented.
