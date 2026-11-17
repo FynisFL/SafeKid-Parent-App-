@@ -57,7 +57,7 @@ try:
       const height=Object.getOwnPropertyDescriptor(VisualViewport.prototype,'height').get;
       Object.defineProperty(viewport,'height',{get(){
         const textEntry=document.activeElement?.matches('input[type=text],input:not([type]),textarea');
-        return height.call(viewport)-(textEntry?260:0);
+        return height.call(viewport)-(textEntry&&window.qaKeyboardEnabled?260:0);
       }});
       for(const event of ['focusin','focusout'])
         document.addEventListener(event,()=>requestAnimationFrame(()=>viewport.dispatchEvent(new Event('resize'))));
@@ -143,6 +143,7 @@ try:
     page.locator('.mobile-nav a[href="#/growth"]').click()
     page.set_viewport_size({'width':390,'height':560})
     page.locator('.intro-actions [data-action="modal-task"]').click()
+    page.evaluate('window.qaKeyboardEnabled = true')
     page.locator('input[name="title"]').focus()
     page.wait_for_function("document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
     keyboard_state = page.evaluate("""() => {const nav=document.querySelector('.mobile-nav');return {width:innerWidth,mobile:matchMedia('(max-width: 767px)').matches,active:document.activeElement?.outerHTML?.slice(0,180),shell:document.querySelector('.app-shell')?.className,focused:document.activeElement?.getAttribute('name'),navDisplay:nav?getComputedStyle(nav).display:null,navParent:nav?.parentElement?.className,styles:[...document.styleSheets].map(s=>({href:s.href,keyboardRule:(()=>{try{return [...s.cssRules].some(r=>r.selectorText==='.app-shell.keyboard-open .mobile-nav')}catch{return 'blocked'}})()}))};}""")
@@ -150,6 +151,7 @@ try:
     assert not page.locator('.mobile-nav').is_visible(), f'Bottom navigation must be hidden while task form input is focused: {keyboard_state}'
     submit_rect = page.locator('button[type="submit"][form="task-form"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
     assert submit_rect['visible'] and submit_rect['bottom'] <= 300, f'Task submit action must remain inside keyboard-visible viewport: {submit_rect}'
+    page.evaluate('window.qaKeyboardEnabled = false')
     page.set_viewport_size({'width':390,'height':844})
     assert page.locator('#reminder-time-wrap').is_hidden()
     page.locator('input[name="reminderEnabled"]').check()
