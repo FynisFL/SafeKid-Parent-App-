@@ -1,0 +1,325 @@
+/* SafeKid mobile-first refinement layer — Phase 1 & support destinations.
+   Uses the existing brand tokens and semantic component classes. */
+:root{
+  --sk-mobile-gutter:clamp(14px,4vw,22px);
+  --sk-mobile-nav-content:64px;
+  --sk-mobile-nav-total:calc(var(--sk-mobile-nav-content) + env(safe-area-inset-bottom,0px));
+  --sk-surface:#fff;
+  --sk-surface-soft:#F2F8F8;
+  --sk-shadow-soft:0 8px 24px rgba(34,75,91,.055);
+}
+html{scroll-padding-top:calc(72px + env(safe-area-inset-top,0px));}
+body{overflow-x:clip;}
+.app-shell,.main-area,.page-wrap,.route-stage{min-width:0;}
+.page-wrap{padding-bottom:calc(var(--sk-mobile-nav-total) + 24px);}
+.card{box-shadow:var(--sk-shadow-soft);}
+.btn,.icon-btn,.mobile-nav a,.more-link{ -webkit-tap-highlight-color:transparent;}
+.btn:focus-visible,.more-link:focus-visible,.mobile-nav a:focus-visible{outline-offset:3px;}
+.support-entry-card{
+  display:flex;align-items:center;gap:13px;min-width:0;
+  margin:0 0 18px;padding:15px 16px;border:1px solid #CDEBE9;
+  border-radius:18px;background:linear-gradient(112deg,#F0FBFA 0%,#F7FAFF 100%);
+  box-shadow:0 8px 22px rgba(26,119,126,.07);transition:border-color .18s,transform .18s,box-shadow .18s;
+}
+.support-entry-card:hover{border-color:#8ED8D5;box-shadow:0 12px 28px rgba(26,119,126,.11);transform:translateY(-1px);}
+.support-entry-icon{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border-radius:15px;background:#DDF6F3;color:#087F87;}
+.support-entry-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px;}
+.support-entry-copy strong{font-size:14px;line-height:1.35;color:#24566A;}
+.support-entry-copy small{font-size:11px;line-height:1.45;color:#69838C;}
+.support-entry-arrow{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:11px;background:#fff;color:#218D91;}
+.support-entry-card--hub{margin:0 0 14px;padding:18px;}
+.support-entry-card--hub .support-entry-icon{width:52px;height:52px;flex-basis:52px;}
+.mobile-quick-actions{gap:8px;}
+.mobile-quick-actions>a{min-width:0;}
+.mobile-quick-actions>a b{overflow-wrap:anywhere;line-height:1.25;}
+.sfai-disclosure{margin:0!important;padding:12px 15px 15px;border-top:1px solid #E6EFF0;background:#F8FBFB;color:#536F78;font-size:11px;line-height:1.6;}
+.sfai-prompts{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;padding:12px 14px;border-top:1px solid #EEF3F4;scrollbar-width:thin;}
+.sfai-prompts button{flex:0 0 auto;min-height:40px;padding:0 12px;border:1px solid #D8E9E9;border-radius:999px;background:#F7FBFB;color:#376B76;font-size:11px;font-weight:700;}
+.sfai-prompts button:active{background:#E5F6F4;border-color:#8DD8D4;}
+.sfai-workspace{overflow:hidden;}
+.sfai-messages{scrollbar-gutter:stable;}
+.chat-form{position:relative;z-index:2;}
+.chat-form input{min-width:0;}
+.faq-search-wide input{min-width:0;width:100%;}
+.faq-item summary{min-height:60px;}
+.faq-item summary:focus-visible{outline-offset:-3px;border-radius:14px;}
+.more-hub{display:grid;gap:12px;}
+.more-group{padding:17px 18px;}
+.more-group h2{font-size:13px;letter-spacing:.035em;margin:0 0 9px;}
+.more-link{min-height:52px;gap:12px;padding:7px 3px;}
+.more-link>span:nth-child(2){min-width:0;line-height:1.35;}
+.mobile-nav{min-height:var(--sk-mobile-nav-content);padding:7px 6px calc(7px + env(safe-area-inset-bottom,0px));}
+.mobile-nav a{min-width:0;min-height:48px;gap:4px;padding:2px 1px;}
+.mobile-nav a>span:last-child{max-width:100%;overflow:visible;text-overflow:clip;white-space:normal;text-align:center;line-height:1.12;}
+.mobile-nav .mobile-sos-link{color:#B83232;}
+.mobile-nav .mobile-sos-link.active{background:#FFF1F0;border-radius:13px;}
+.toast{bottom:calc(var(--sk-mobile-nav-total) + 12px);}
+.modal-backdrop{padding: max(12px,env(safe-area-inset-top,0px)) 12px max(12px,env(safe-area-inset-bottom,0px));}
+@media(max-width:767px){
+  :root{--sk-mobile-nav-content:62px;}
+  .main-area{padding-bottom:var(--sk-mobile-nav-total);}
+  .page-wrap{padding:20px var(--sk-mobile-gutter) 26px;}
+  .page-intro{gap:8px;margin-bottom:17px;}
+  .page-intro h1{font-size:clamp(24px,7vw,29px);line-height:1.16;}
+  .page-intro p{font-size:13px;line-height:1.5;}
+  .section-row{margin:23px 0 11px;}
+  .section-row h2{font-size:18px;}
+  .card{border-radius:17px;padding:16px;}
+  .btn{min-height:48px;font-size:13px;}
+  .mobile-quick-actions{grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 13px;}
+  .mobile-quick-actions>a{padding:10px 4px;min-height:82px;}
+  .mobile-quick-actions>a b{font-size:10px;}
+  .support-entry-card{margin:0 0 16px;padding:13px;border-radius:16px;}
+  .support-entry-copy strong{font-size:13px;}
+  .support-entry-copy small{font-size:10px;}
+  .family-hero{min-height:0;padding:18px 17px;border-radius:19px;}
+  .family-hero-copy{max-width:76%;}
+  .family-hero-copy h2{font-size:19px;line-height:1.25;}
+  .family-hero-copy p{font-size:11px;line-height:1.5;}
+  .family-hero-mascot,.hero-sticker,.hero-orbit{display:none!important;}
+  .home-grid{gap:11px;}
+  .location-feature,.safety-feature{padding:16px;}
+  .location-summary{gap:10px;padding:12px;margin:13px 0;}
+  .feature-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;}
+  .feature-actions .btn{min-width:0;padding:0 9px;font-size:11px;}
+  .sfai-intro{padding:16px;}
+  .sfai-intro-copy{max-width:100%;}
+  .sfai-intro-art{display:none;}
+  .sfai-intro h2{font-size:19px;line-height:1.28;}
+  .sfai-heading{padding:12px;}
+  .sfai-prompts{padding:10px 11px;}
+  .sfai-messages{min-height:240px;max-height:48dvh;padding:12px;}
+  .chat-form{padding:10px 11px 8px;gap:8px;}
+  .chat-form input{font-size:16px;min-height:48px;}
+  .chat-form .btn{width:48px;height:48px;min-width:48px;}
+  .sfai-disclosure{font-size:10px;padding:11px 12px 13px;}
+  .faq-contact-card{gap:10px;}
+  .faq-contact-card p{font-size:12px;}
+  .more-group{padding:14px 15px;}
+  .more-link{min-height:54px;}
+  .mobile-nav{left:0;right:0;bottom:0;grid-template-columns:repeat(5,minmax(0,1fr));}
+  .mobile-nav a>span:last-child{font-size:clamp(9px,2.6vw,11px);letter-spacing:0;}
+}
+@media(max-width:359px){
+  .topbar{padding-inline:12px;}
+  .top-actions{gap:5px;}
+  .local-pill{display:none;}
+  .mobile-nav{padding-inline:3px;}
+  .mobile-nav a>span:last-child{font-size:9px;}
+  .mobile-quick-actions>a b{font-size:9px;}
+  .feature-actions{grid-template-columns:1fr;}
+}
+@media(min-width:768px) and (max-width:1023px){
+  .sidebar{width:220px;}
+  .main-area{margin-left:220px;}
+  .page-wrap{padding:28px 24px 44px;}
+}
+@media(min-width:1024px){
+  .page-wrap{padding-bottom:48px;}
+  .more-hub{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}
+}
+@media(hover:none){
+  .support-entry-card:hover{transform:none;}
+  .btn:hover{transform:none;}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+}
+
+/* Phase 2 — core destination layouts. Keep functional status above decoration. */
+.location-layout,.location-side,.home-grid,.growth-summary,.settings-layout,.plans-grid{min-width:0;}
+.map-card{min-width:0;}
+.map-view{min-height:280px;}
+.map-readonly-note{align-items:start;}
+.map-readonly-note small{line-height:1.55;}
+.zone-list{gap:10px;}
+.zone-card{min-width:0;}
+.zone-info,.zone-info p,.zone-info small{overflow-wrap:anywhere;}
+.sos-panel{border-color:#F0D3D1;}
+.sos-guidance{line-height:1.55;}
+.growth-summary .card{min-width:0;}
+.tabbar{scrollbar-width:thin;overscroll-behavior-x:contain;scroll-snap-type:x proximity;}
+.tabbar a{flex:0 0 auto;scroll-snap-align:start;min-height:44px;}
+.task-row{min-width:0;}
+.task-body{overflow-wrap:anywhere;}
+.settings-layout .card{min-width:0;}
+.toggle-row{min-height:58px;gap:14px;}
+.toggle-row>span:first-child{min-width:0;line-height:1.4;}
+.toggle-row input[type=checkbox]{flex:none;width:20px;height:20px;}
+.plan-card{min-width:0;}
+.plan-feature{min-width:0;}
+.plan-feature>span:nth-child(2){min-width:0;}
+.modal{min-height:0;}
+.modal-head{flex:none;}
+.modal-body{overscroll-behavior:contain;}
+.modal-actions{flex:none;}
+@media(max-width:767px){
+  /* Location: compact controls first, map remains the dominant task surface. */
+  .location-layout{grid-template-columns:minmax(0,1fr);gap:11px;}
+  .map-head{gap:10px;padding:14px 14px 12px;}
+  .map-head>div{width:100%;}
+  .map-head b{font-size:13px;}
+  .map-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:7px;}
+  .map-buttons .btn{min-width:0;min-height:46px;padding:7px 8px;font-size:11px;line-height:1.25;}
+  .map-readonly-note{grid-template-columns:30px minmax(0,1fr);gap:8px;padding:11px;margin:0 0 9px;}
+  .map-readonly-note .text-link{grid-column:2;justify-self:start;}
+  .map-view{height:clamp(270px,76vw,350px);min-height:270px;}
+  .location-side{grid-template-columns:minmax(0,1fr);gap:10px;}
+  .location-side .card{padding:15px;}
+  .status-row{align-items:flex-start;gap:10px;}
+  .status-row>span{font-size:11px;}
+  .status-row>b{text-align:right;overflow-wrap:anywhere;}
+  .map-attribution{display:flex;flex-direction:column;gap:3px;line-height:1.45;}
+  /* Safe Zones: readable rows with actions that do not crowd the zone title. */
+  .zone-card{display:grid;grid-template-columns:42px minmax(0,1fr);gap:9px;padding:13px;}
+  .zone-symbol{width:40px;height:40px;}
+  .zone-info{min-width:0;}
+  .zone-title{align-items:flex-start;gap:6px;}
+  .zone-info h3{font-size:13px;line-height:1.35;}
+  .zone-card>.row-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 44px;width:100%;gap:7px;margin-top:3px;}
+  .zone-card>.row-actions .btn{min-width:0;min-height:44px;padding:5px 7px;font-size:11px;}
+  /* SOS: one primary action, clear emergency contact access. */
+  .sos-panel{padding:19px 14px;border-radius:20px;margin-bottom:14px;}
+  .sos-pulse{width:68px;height:68px;border-radius:21px;margin-bottom:12px;}
+  .sos-panel h2{font-size:19px;line-height:1.25;}
+  .sos-panel>p{font-size:12px;line-height:1.55;margin-bottom:15px;}
+  .sos-actions{grid-template-columns:minmax(0,1fr);gap:9px;margin-bottom:17px;}
+  .sos-hold{min-height:108px;border-radius:17px;}
+  .sos-guidance{padding-top:14px;font-size:11px;}
+  .emergency-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;}
+  .emergency-numbers a{min-width:0;padding:10px 5px;min-height:70px;}
+  .emergency-numbers strong{font-size:19px;}
+  .active-sos-card{align-items:stretch;gap:12px;padding:14px;}
+  .active-sos-card .row-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;}
+  .active-sos-card .row-actions .btn{min-width:0;min-height:44px;}
+  /* Growth: task creation and progress take priority over the decorative mascot. */
+  .growth-motto{min-height:0;padding:14px 15px;border-radius:17px;margin-bottom:12px;}
+  .growth-motto-copy{max-width:100%;}
+  .growth-motto-copy>b{font-size:15px;line-height:1.3;}
+  .growth-motto-copy>small{font-size:11px;line-height:1.45;}
+  .growth-motto-art{display:none!important;}
+  .growth-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .growth-summary .card{padding:12px;}
+  .coin-card{gap:9px;}
+  .coin-mark{width:34px;height:34px;flex:0 0 34px;}
+  .coin-card strong,.progress-card strong{font-size:20px;}
+  .coin-card p,.progress-card p{font-size:9px;line-height:1.35;}
+  .progress-card{gap:7px;}
+  .progress-ring{width:44px;height:44px;flex:0 0 44px;}
+  .tabbar{gap:0;margin:14px -2px 12px;padding:0 2px;}
+  .tabbar a{padding:10px 12px;font-size:11px;}
+  .task-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:9px;padding:12px;margin-bottom:8px;}
+  .task-check{width:22px;height:22px;}
+  .task-body b{font-size:12px;line-height:1.35;}
+  .task-body small{font-size:10px;line-height:1.4;}
+  .task-reward{font-size:10px;}
+  .task-row .btn,.task-row .badge{grid-column:2/-1;justify-self:start;min-height:40px;}
+  .habit-grid{grid-template-columns:minmax(0,1fr);gap:8px;}
+  .habit-card{padding:12px;}
+  /* Settings and plans: compact rows, no horizontal squeeze. */
+  .settings-layout{grid-template-columns:minmax(0,1fr);gap:10px;}
+  .settings-layout>.card:last-child{grid-column:auto;}
+  .toggle-row{min-height:56px;padding:10px 0;}
+  .form-grid{grid-template-columns:minmax(0,1fr);}
+  .plans-grid{grid-template-columns:minmax(0,1fr);gap:10px;}
+  .plan-card{padding:17px 15px;border-radius:18px;}
+  .plan-card h2{font-size:24px;}
+  .plan-price strong{font-size:23px;}
+  .plan-feature{grid-template-columns:24px minmax(0,1fr);gap:8px;padding:10px 0;}
+  .plan-feature em{grid-column:2;justify-self:start;padding-top:0;}
+  /* Keyboard and modal: preserve visible actions on compact viewports. */
+  .modal-backdrop{place-items:end center;padding:8px 8px max(8px,env(safe-area-inset-bottom,0px));}
+  .modal{width:100%;max-height:min(92dvh,900px);border-radius:20px 20px 14px 14px;}
+  .modal-head{padding:14px 15px;}
+  .modal-body{padding:15px;max-height:calc(92dvh - 132px);}
+  .modal-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-top:8px;}
+  .modal-actions .btn{min-width:0;width:100%;min-height:46px;}
+  .sfai-workspace{display:flex;flex-direction:column;min-height:68dvh;}
+  .sfai-messages{flex:1;min-height:240px;overflow-y:auto;overscroll-behavior:contain;}
+  .chat-form{position:sticky;bottom:0;background:#fff;}
+  .mobile-nav{transition:transform .18s ease;}
+}
+@media(max-width:359px){
+  .growth-summary{grid-template-columns:minmax(0,1fr);}
+  .zone-card>.row-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .zone-card>.row-actions .btn-icon{grid-column:1/-1;width:100%;}
+  .emergency-numbers a{padding-inline:3px;}
+  .emergency-numbers small{font-size:9px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .mobile-nav{transition:none!important;}
+}
+
+.contact-links-grid{display:grid;gap:8px;}
+.contact-channel{display:flex;align-items:center;gap:10px;min-width:0;padding:11px 12px;border:1px solid var(--sk-border);border-radius:13px;background:#fff;color:var(--sk-deep-blue);}
+.contact-channel-icon{width:36px;height:36px;display:grid;place-items:center;flex:0 0 36px;border-radius:11px;background:var(--sk-surface-soft);color:#168B91;}
+.contact-channel>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;}
+.contact-channel b{font-size:12px;}
+.contact-channel small{font-size:10px;overflow-wrap:anywhere;}
+.contact-channel>svg:last-child{flex:none;color:#729097;}
+@media(max-width:767px){.contact-channel{min-height:58px;padding:10px;}}
+
+/* Final mobile polish: prevent truncation of quick actions and secondary tabs. */
+.home-intro .intro-date{width:max-content;max-width:100%;align-self:flex-start;white-space:nowrap;}
+.mobile-quick-actions>a b{display:block;width:100%;white-space:normal;overflow:visible;text-overflow:clip;text-align:center;overflow-wrap:anywhere;}
+@media(max-width:767px){
+  .mobile-quick-actions>a{min-width:0;}
+  .mobile-quick-actions>a b{font-size:clamp(9px,2.5vw,10px);line-height:1.2;}
+  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;overflow:visible;scroll-snap-type:none;}
+  .tabbar a{min-width:0;padding:9px 3px;text-align:center;font-size:10px;white-space:nowrap;}
+}
+@media(max-width:359px){
+  .tabbar{grid-template-columns:repeat(5,minmax(0,1fr));}
+  .tabbar a{font-size:9px;padding-inline:1px;}
+}
+
+/* Home hierarchy: parent-phone status before secondary shortcuts; no decorative hero in the first mobile flow. */
+.home-intro .intro-date{font-size:11px;gap:8px;padding:8px 12px;border-radius:999px;display:inline-flex;align-items:center;background:#fff;color:#617A82;}
+.home-grid-secondary{margin-top:10px;}
+@media(max-width:767px){
+  .family-hero{display:none!important;}
+  .home-intro{gap:9px;margin-bottom:13px;}
+  .home-intro .intro-date{font-size:11px;gap:8px;padding:8px 12px;width:max-content;}
+  .home-section-row{margin:12px 0 10px;}
+  .home-grid{margin-bottom:0;}
+  .home-grid-secondary{margin-top:12px;}
+}
+
+/* S.F AI mobile conversation: keep the composer in the visible conversation viewport. */
+@media(max-width:767px){
+  .sfai-intro{padding:12px 14px;margin-bottom:10px;min-height:0;}
+  .sfai-intro h2{font-size:16px;line-height:1.25;margin:7px 0 5px;}
+  .sfai-intro p{display:none;}
+  .sfai-intro .sfai-status{font-size:9px;}
+  .sfai-intro .sfai-faqlink{font-size:11px;}
+  .sfai-workspace{height:clamp(180px,calc(100dvh - 560px),380px);min-height:0;}
+  .sfai-heading{min-height:56px;padding:10px 12px;}
+  .sfai-prompts{min-height:44px;max-height:48px;padding:7px 9px;}
+  .sfai-prompts button{min-height:34px;padding-inline:10px;font-size:10px;}
+  .sfai-messages{min-height:0;max-height:none;flex:1;padding:10px;overflow-y:auto;}
+  .chat-form{position:sticky;bottom:0;min-height:60px;padding:8px 9px;background:#fff;border-top:1px solid #EDF2F3;}
+  .chat-form input{min-height:44px;}
+  .chat-form .btn{width:44px;height:44px;min-width:44px;}
+  .sfai-disclosure{font-size:9px;line-height:1.4;padding:8px 10px;}
+}
+
+.faq-category-filter{display:flex;gap:7px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin;overscroll-behavior-x:contain;}
+.faq-category-filter button{flex:0 0 auto;min-height:40px;padding:0 13px;border:1px solid #DCE9EA;border-radius:999px;background:#fff;color:#607B84;font-size:11px;font-weight:700;white-space:nowrap;}
+.faq-category-filter button[aria-pressed="true"]{border-color:#7FD2CF;background:#E8F8F6;color:#087F87;}
+@media(max-width:767px){.faq-category-filter{margin:0 -2px 8px;padding:2px 2px 8px;}.faq-category-filter button{min-height:42px;padding-inline:12px;font-size:10px;}}
+
+.sfai-disclosure{display:block;border:1px solid #E1ECEC;border-radius:12px;background:#F8FBFB;color:#536F78;}
+@media(max-width:767px){.sfai-disclosure{margin:0 0 10px!important;padding:9px 11px;font-size:9px;line-height:1.4;border:1px solid #E1ECEC;border-radius:12px;}}
+
+/* Phase 1 — keyboard-visible shell behavior. Text-entry focus on phone yields the viewport to the editor. */
+.app-shell.keyboard-open .mobile-nav{display:none!important;}
+.app-shell.keyboard-open .main-area{padding-bottom:0!important;}
+.app-shell.keyboard-open .page-wrap{padding-bottom:16px!important;}
+.app-shell.keyboard-open .modal-backdrop{padding-bottom:max(8px,env(safe-area-inset-bottom,0px));}
+.app-shell.keyboard-open .modal{max-height:calc(100dvh - 12px);}
+.app-shell.keyboard-open .modal-body{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+
+
+/* SOS contrast: white labels remain legible on the emergency action fill. */
+.sos-hold{background:linear-gradient(145deg,#C7354E,#A92F45);border:1px solid #A92F45;color:#FFFFFF;}
+.sos-hold small{color:#FFFFFF;opacity:.94;}

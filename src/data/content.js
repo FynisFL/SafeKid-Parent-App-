@@ -1,6 +1,15 @@
 function parseEntries(markdown){
-  const text=markdown.replace(/\r/g,'');const matches=[...text.matchAll(/\*\*(.+?)\*\*\s*\n([\s\S]*?)(?=\n\s*\n\*\*|\n\s*##|$)/g)];
-  return matches.map(m=>({question:m[1].trim(),answer:m[2].trim().replace(/^\s*\n|\n\s*$/g,'')})).filter(x=>x.question&&x.answer);
+  const lines=String(markdown||'').replace(/\r/g,'').split('\n');
+  const entries=[];let category='General';let current=null;
+  const flush=()=>{if(!current)return;const answer=current.answer.join('\n').trim();if(current.question&&answer)entries.push({question:current.question,answer,category:current.category});current=null;};
+  for(const line of lines){
+    const heading=line.match(/^##\s+(.+?)\s*$/);
+    if(heading){flush();category=heading[1].trim();continue;}
+    const question=line.match(/^\*\*(.+\?)\*\*\s*$/);
+    if(question){flush();current={question:question[1].trim(),category,answer:[]};continue;}
+    if(current)current.answer.push(line);
+  }
+  flush();return entries;
 }
 export function parseSfaiResponses(markdown){
   const text=String(markdown||'').replace(/\r/g,'');

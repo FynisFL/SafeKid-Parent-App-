@@ -45,6 +45,43 @@ jobs:
         with:
           path: ./dist
 
+  browser-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Playwright and Chromium
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Start SafeKid local server
+        run: |
+          npm run dev > /tmp/safekid-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/safekid-server.log
+          exit 1
+      - name: Run browser UX and viewport tests
+        run: npm run test:e2e
+      - name: Upload browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safekid-mobile-redesign-screenshots
+          path: screenshots/
+          if-no-files-found: warn
+
   deploy:
     if: github.event_name != 'pull_request'
     environment:

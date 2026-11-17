@@ -6,7 +6,7 @@
 
 - [ ] Deploy the contents of `dist/` to an HTTPS origin (do not deploy source root as the web root).
 - [ ] Restrict the browser MapTiler key to the exact HTTPS origin/referrer.
-- [ ] Open once while online so service worker `safekid-pwa-v7-full-ux-fix` installs.
+- [ ] Open once while online so service worker `safekid-pwa-v7-mobile-shell-r2` installs.
 - [ ] Use a fresh browser profile for first-run tests; record device model, OS, browser version and date.
 - [ ] Use only safe test locations and test contacts. Export a backup before destructive reset/import scenarios.
 - [ ] Run a second pass with OS/browser reduced-motion enabled.
@@ -89,6 +89,15 @@
 - [ ] Complete keyboard-only navigation; verify visible focus on links/buttons/inputs.
 - [ ] Verify reduced-motion: nonessential entrance, hover and continuous effects stop; state changes remain immediate; SOS has no blocking motion.
 - [ ] Run VoiceOver (iOS), TalkBack (Android) or desktop screen reader for headings, input labels, dialogs, alerts and status announcements.
+
+## Mobile redesign follow-up — Freemium transparency and S.F AI mobile composer
+
+- [ ] Open Plans from More. Confirm Free includes parent-phone GPS, core Safe Zones, same-device SOS, Growth basics and local storage.
+- [ ] Confirm Plus is labelled planned / not available for purchase; no checkout, payment, renewal or locked safety feature is presented.
+- [ ] Confirm the Plans page explains that SafeKid Plus is inactive in this web version and does not change geofence thresholds.
+- [ ] Open S.F AI at 320×720, 320×780, 360×800, 390×844 and 430×932. Confirm the message composer remains visible above the fixed bottom navigation without scrolling.
+- [ ] Focus the S.F AI input. Confirm the bottom navigation yields while typing and returns after blur; the composer remains reachable.
+- [ ] Confirm the S.F AI disclaimer is visible and accurately says messages are processed from approved on-device content, are not sent to SafeKid staff, and cannot locate a child or dispatch emergency help.
 
 ## Cross-screen visual matrix
 
