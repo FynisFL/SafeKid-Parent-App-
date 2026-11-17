@@ -312,6 +312,7 @@ async function handleAction(action){
 let holdTimer=null,holdFired=false,modalReturnFocus=null;
 function focusInitialModalControl(){
  const dialog=$('.modal');if(!dialog)return;
+ if(dialog.contains(document.activeElement)&&document.activeElement!==dialog)return;
  const target=$('input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),.modal-actions .btn-secondary,button[data-action="modal-close"],button:not([disabled])',dialog);
  target?.focus({preventScroll:true});
  syncMobileKeyboardState();

@@ -79,3 +79,8 @@ test('Service worker invalidates the previous shell cache and precaches the mobi
   assert.match(serviceWorker,/safekid-pwa-v7-mobile-shell-r1/);
   assert.match(serviceWorker,/\.\/src\/mobile-refinements\.css/);
 });
+
+test('Modal initial focus does not steal focus from a control the user already focused',()=>{
+  const focus=source.slice(source.indexOf('function focusInitialModalControl()'),source.indexOf('function closeModalAndRestoreFocus()'));
+  assert.match(focus,/dialog\.contains\(document\.activeElement\)/);
+});
