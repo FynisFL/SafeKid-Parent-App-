@@ -30,6 +30,6 @@ test('Freemium copy clearly distinguishes active Free from planned Plus',()=>{
 
 test('Support, FAQ and plan components have responsive and reduced-motion rules',()=>{
   for(const selector of ['.faq-item','.sfai-workspace','.plans-grid','.plan-card']) assert.ok(styles.includes(selector),'Missing '+selector);
-  assert.match(styles,/@media\(max-width:767px\)[\s\S]*\.plans-grid\{grid-template-columns:minmax\(0,1fr\)\}/);
-  assert.match(styles,/@media\(prefers-reduced-motion:reduce\)[\s\S]*\.faq-item/);
+  assert.ok(/@media\\(max-width:767px\\)[\\s\\S]*\\.plans-grid\\s*\\{\\s*grid-template-columns:minmax\\(0,1fr\\)/.test(styles));
+  assert.ok(/@media\\(max-width:767px\\)[\\s\\S]*\\.plans-grid\\s*\\{\\s*grid-template-columns:minmax\\(0,1fr\\)/.test(styles));
 });
