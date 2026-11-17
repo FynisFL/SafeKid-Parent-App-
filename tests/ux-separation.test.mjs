@@ -21,9 +21,18 @@ test('FAQ and S.F AI have separate routes and renderers',()=>{
 });
 
 test('More hub exposes FAQ and S.F AI as independent destinations',()=>{
-  assert.match(source,/\['\/help','faqHub','book'\],\['\/sfai','sfai','sparkles'\]/);
+  const more=source.slice(source.indexOf('function renderMoreHub()'),source.indexOf('function renderHome()'));
+  assert.match(more,/\\['\\/help','faqHub','book'\\]/);
+  assert.match(more,/href="#\\/sfai"/);
+  assert.match(more,/support-entry-card--hub/);
 });
 
+test('S.F AI provides suggested prompts and truthful local-only support disclosure',()=>{
+  const sfai=source.slice(source.indexOf('function renderSfai()'),source.indexOf('function answerSfai('));
+  assert.match(sfai,/data-sfai-prompt/);
+  assert.match(sfai,/không phải nhân viên trực tuyến/);
+  assert.match(sfai,/không được gửi tới đội ngũ SafeKid/);
+});
 test('Freemium copy clearly distinguishes active Free from planned Plus',()=>{
   assert.match(source,/Always free|Luôn miễn phí/);
   assert.match(source,/Not available for purchase|Chưa mở bán/);

@@ -58,7 +58,7 @@ body{overflow-x:clip;}
 @media(max-width:767px){
   :root{--sk-mobile-nav-content:62px;}
   .main-area{padding-bottom:var(--sk-mobile-nav-total);}
-  .page-wrap{padding:20px var(--sk-mobile-gutter) calc(var(--sk-mobile-nav-total) + 26px);}
+  .page-wrap{padding:20px var(--sk-mobile-gutter) 26px;}
   .page-intro{gap:8px;margin-bottom:17px;}
   .page-intro h1{font-size:clamp(24px,7vw,29px);line-height:1.16;}
   .page-intro p{font-size:13px;line-height:1.5;}
