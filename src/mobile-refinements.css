@@ -292,7 +292,7 @@ body{overflow-x:clip;}
   .sfai-intro p{display:none;}
   .sfai-intro .sfai-status{font-size:9px;}
   .sfai-intro .sfai-faqlink{font-size:11px;}
-  .sfai-workspace{height:clamp(210px,calc(100dvh - 520px),380px);min-height:0;}
+  .sfai-workspace{height:clamp(180px,calc(100dvh - 560px),380px);min-height:0;}
   .sfai-heading{min-height:56px;padding:10px 12px;}
   .sfai-prompts{min-height:44px;max-height:48px;padding:7px 9px;}
   .sfai-prompts button{min-height:34px;padding-inline:10px;font-size:10px;}
