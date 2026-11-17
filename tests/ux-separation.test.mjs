@@ -88,7 +88,9 @@ test('Modal initial focus does not steal focus from a control the user already f
 test('SOS hold action uses accessible high-contrast labels on its emergency fill',()=>{
   const rule=refinements.match(/\.sos-hold\{([^}]*)\}\s*\.sos-hold small\{([^}]*)\}/s);
   assert.ok(rule,'SOS contrast override exists');
-  const colors=[...rule[1].matchAll(/#([0-9A-Fa-f]{6})/g)].map(x=>x[1]);
+  const gradient=rule[1].match(/linear-gradient\(\s*\d+deg,\s*#([0-9A-Fa-f]{6}),\s*#([0-9A-Fa-f]{6})\)/);
+  assert.ok(gradient,'SOS gradient colors are explicit');
+  const colors=gradient.slice(1);
   const foreground=rule[1].match(/color:#([0-9A-Fa-f]{6})/i)?.[1];
   const smallForeground=rule[2].match(/color:#([0-9A-Fa-f]{6})/i)?.[1];
   assert.ok(foreground&&smallForeground,'both main and helper text colors are explicit');
