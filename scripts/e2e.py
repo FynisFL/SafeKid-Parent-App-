@@ -134,7 +134,8 @@ try:
     assert page.locator('#reminder-time-wrap').is_visible()
     page.locator('select[name="repeat"]').select_option('weekly')
     assert page.locator('#task-weekday-wrap').is_visible()
-    page.locator('.weekday-chip input[name="weekday"]').first.check()
+    weekday_index = page.evaluate("() => (new Date().getDay() + 6) % 7")
+    page.locator('.weekday-chip input[name="weekday"]').nth(weekday_index).check()
     page.locator('input[name="title"]').fill('QA weekly task')
     page.locator('#task-form button[type="submit"]').click()
     page.get_by_text('QA weekly task', exact=True).wait_for(timeout=4000)
@@ -179,7 +180,7 @@ try:
     # Core route mobile geometry: no horizontal overflow and final content scrolls above fixed nav.
     for route in ['#/home', '#/location', '#/sos', '#/growth', '#/more', '#/sfai', '#/help']:
       page.goto('http://127.0.0.1:4173/' + route, wait_until='domcontentloaded')
-      page.wait_for_timeout(100)
+      page.wait_for_timeout(500)
       for width,height in [(320,780),(360,800),(375,812),(390,844),(430,932)]:
         page.set_viewport_size({'width':width,'height':height})
         page.wait_for_timeout(50)
@@ -199,6 +200,7 @@ try:
         }''')
         assert bottom, f'Bottom nav overlaps final content {route} at {width}px'
       page.set_viewport_size({'width':390,'height':844})
+      page.wait_for_timeout(500)
       page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390.png'),full_page=True)
     results.append('Mobile route geometry matrix: 7 routes × 5 phone widths; overflow and final-content/nav clearance')
 
