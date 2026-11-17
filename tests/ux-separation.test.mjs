@@ -6,8 +6,8 @@ const source=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
 const styles=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
 
 test('FAQ and S.F AI have separate routes and renderers',()=>{
-  assert.doesNotMatch(source,/lastRenderedRoute=null;\\nfunction render\\(\\)/);
-  assert.match(source,/function normalizeFaqSearch\\(value\\)/);
+  assert.equal(source.includes("lastRenderedRoute=null;"+String.fromCharCode(92)+"nfunction render()"),false);
+  assert.ok(source.includes("function normalizeFaqSearch(value)"));
   assert.match(source,/if\(p==='\/help'\)return renderHelp\(\);if\(p==='\/sfai'\)return renderSfai\(\);/);
   assert.match(source,/function renderHelp\(\)/);
   assert.match(source,/function renderSfai\(\)/);
