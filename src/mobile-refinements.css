@@ -508,22 +508,82 @@ html:has(.dialog-open){overflow:hidden;}
   .calendar-row,.habit-card,.more-link,.plan-card li{overflow-wrap:anywhere;}
 }
 
+
+/* A single conversation viewport keeps messages and composer together. */
 @media(max-width:767px){
- .route-stage:has(.sfai-workspace){animation:none!important;transform:none!important;padding-bottom:100px;}
- .route-stage:has(.sfai-workspace) #sfai-form{
-  position:fixed;left:14px;right:14px;bottom:calc(var(--sk-mobile-nav-total) + 4px);
-  z-index:81;background:#fff;border:1px solid #dce9eb;border-radius:16px;
-  box-shadow:0 -4px 18px #244e6010;
+ .app-shell.chat-screen .route-stage{
+  display:flex;flex-direction:column;gap:8px;height:var(--chat-height,calc(100dvh - 150px));
+  min-height:0;padding:10px 14px;overflow:hidden;animation:none!important;transform:none!important;
  }
- .app-shell.keyboard-open #sfai-form{bottom:env(safe-area-inset-bottom,0px);}
+ .chat-screen .route-stage>.page-intro{margin:0;flex:none;}
+ .chat-screen .page-intro h1{font-size:22px;}
+ .chat-screen .page-intro :is(.eyebrow,p){display:none;}
+ .sfai-compact-help{flex:none;font-size:13px;min-height:28px;display:flex;align-items:center;gap:6px;}
+ .chat-screen .sfai-disclosure{
+  flex:none;font-size:12px;line-height:1.45;max-height:76px;overflow-y:auto;margin:0!important;padding:8px 10px;
+ }
+ .chat-screen .sfai-workspace{
+  display:flex;flex:1;flex-direction:column;min-height:0;height:auto;margin:0;padding:0;
+  overflow:hidden;transform:none!important;box-shadow:none;
+ }
+ .chat-screen .sfai-heading{display:none;}
+ .chat-screen .sfai-prompts{flex:none;padding:8px;border-top:0;}
+ .chat-screen .sfai-messages,.chat-screen.keyboard-open .sfai-messages{
+  flex:1;min-height:0;height:auto;max-height:none;padding:10px;overflow-y:auto;scroll-behavior:auto;
+ }
+ .chat-screen .chat-message{font-size:14px;line-height:1.5;box-shadow:none;}
+ .chat-screen .chat-message small{font-size:12px;}
+ .chat-screen #sfai-form{
+  position:static;flex:none;min-height:64px;padding:8px;gap:8px;border-top:1px solid #dce9eb;
+  margin:0;border-radius:0;background:#fff;
+ }
+ .chat-screen #sfai-form input{height:48px;min-height:48px;font-size:16px;padding:10px 12px;}
+ .chat-screen .route-stage>.support-card{display:none;}
+ .chat-screen.keyboard-open .sfai-disclosure,.chat-screen.keyboard-open .sfai-compact-help{display:none;}
+ .app-shell.chat-screen .main-area{padding-bottom:0;}
+
+ /* The nav background is stable. One translated circle follows the active item. */
+ .mobile-nav{
+  background:#fff;border:1px solid #dce9eb;border-radius:22px 22px 0 0;
+  box-shadow:0 -3px 18px #244e6014;
+ }
+ .mobile-nav::before{
+  top:1px;bottom:auto;left:calc(10% - 22px);right:auto;width:44px;height:44px;
+  border:0;border-radius:50%;background:#d6f6f3;mask-image:none;box-shadow:none;
+  transform:translate3d(var(--nav-shift,0px),-8px,0);
+  transition:transform 220ms cubic-bezier(.22,.75,.25,1);
+ }
+ .mobile-nav a .mobile-nav-icon,.mobile-nav a.mobile-sos-link .mobile-nav-icon{
+  transition:transform 180ms ease-out;color:inherit;background:transparent;box-shadow:none;
+ }
+ .mobile-nav a.active .mobile-nav-icon,.mobile-nav a.mobile-sos-link.active .mobile-nav-icon{
+  transform:translateY(-8px);background:transparent;
+ }
+ .more-links{grid-template-columns:minmax(0,1fr);}
+ .more-link{min-height:56px;}
+ .section-row{flex-wrap:wrap;gap:8px;}
+ .section-row>*{min-width:0;}
+ .section-row>.muted{font-size:13px;}
+
+ .modal .zone-location-picker{padding:12px;background:#f7fbfc;border:1px solid #e2edef;}
+ .modal .zone-search-row{display:flex;flex-direction:column;gap:8px;}
+ .modal .zone-search-label{position:static;margin:0;line-height:1.4;}
+ .modal .zone-search-controls{display:flex;align-items:center;gap:8px;}
+ .modal .zone-search-controls input{flex:1;min-width:0;width:0;}
+ .modal .zone-search-controls .btn{width:auto;flex:none;min-height:48px;}
+ .modal .zone-search-results{max-height:none;overflow:visible;gap:8px;margin-block:10px;}
+ .modal .zone-search-result{min-height:56px;height:auto;}
+ .modal .zone-search-result :is(b,small){white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
+ .modal .zone-map-wrap{position:relative;isolation:isolate;margin-top:12px;overflow:hidden;border-radius:14px;}
+ .modal .modal-body{padding:16px;scroll-padding-block:16px;}
+ .modal input:focus,.modal textarea:focus,.modal select:focus,#sfai-form input:focus{
+  outline:none!important;border-color:#198d96;box-shadow:inset 0 0 0 1px #198d96!important;
+ }
+ .modal :is(input,select,textarea){line-height:1.5;}
+ .modal .form-stack label{font-size:14px;line-height:1.4;gap:8px;}
+ .modal .tiny,.modal .zone-search-privacy,.modal .zone-search-status{font-size:12px;line-height:1.5;}
+ .sfai-status,.contact-channel small,.faq-category-filter button,.emergency-numbers small{font-size:12px;}
 }
-
-@media(max-width:767px){.sfai-workspace,.sfai-workspace:hover{transform:none!important;filter:none!important;backdrop-filter:none!important;}}
-
-@media(max-width:767px){
- .app-shell:has(.sfai-workspace),.main-area:has(.sfai-workspace),.route-stage:has(.sfai-workspace),.sfai-workspace{will-change:auto!important;perspective:none!important;contain:none!important;content-visibility:visible!important;}
- #sfai-form{bottom:calc(80px + env(safe-area-inset-bottom,0px))!important;top:auto!important;}
- .app-shell.keyboard-open #sfai-form{bottom:0!important;}
+@media(prefers-reduced-motion:reduce){
+ .mobile-nav::before,.mobile-nav a .mobile-nav-icon{transition:none!important;}
 }
-
-@media(max-width:767px){.app-shell > #sfai-form{position:fixed;left:14px;right:14px;bottom:80px!important;top:auto;z-index:81;background:white;border:1px solid #dce9eb;border-radius:16px;}.app-shell.keyboard-open > #sfai-form{bottom:0!important;}}

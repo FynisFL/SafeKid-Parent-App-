@@ -197,13 +197,6 @@ function render(){
    }
   }
  }
- const composerInPage=$('.route-stage #sfai-form',root);
- if(replacePage){
-  $('.app-shell > #sfai-form',root)?.remove();
-  if(composerInPage&&matchMedia('(max-width:767px)').matches){
-   $('.app-shell',root).append(composerInPage);
-  }
- }
  lastPageMarkup=pageMarkup;
  lastModalMarkup=modalMarkup;
  const stage=$('.route-stage');
@@ -217,7 +210,7 @@ function render(){
   region.inert=Boolean(modal);
  }
  if(S.modal&&replaceModal)requestAnimationFrame(focusInitialModalControl);
- requestAnimationFrame(syncMobileKeyboardState);
+ requestAnimationFrame(()=>{syncMobileKeyboardState();syncNavIndicator();});
  if(replacePage&&S.route==='/location'&&MapAdapter.styleUrl())initMap();
  if(replaceModal&&(S.modal?.type==='zone'||S.modal?.type==='zone-edit'))initZoneBuilderMap();
 }
@@ -293,7 +286,7 @@ function renderFaqItems(items,q='',category='all'){
 function renderChatMessage(m){return `<div class="chat-message ${m.role}">${esc(m.text).replace(/\n/g,'<br>')}${m.source?`<small>${S.locale==='vi'?'Nguồn':'Source'}: ${esc(m.source)}</small>`:''}${m.kind==='emergency'?`<a href="#/sos" class="btn btn-danger btn-small">${t('openSos')}</a>`:''}${m.kind==='scope'?`<div class="handoff-label">${t('demoLabel')}</div><div class="support-links">${contactLinks()}</div>`:''}</div>`;}
 function renderSfai(){
  return `<div class="page-intro"><div><span class="eyebrow">CUSTOMER CARE</span><h1>S.F AI</h1><p>${S.locale==='vi'?'Trợ lý AI hướng dẫn sử dụng SafeKid và giải đáp các câu hỏi phổ biến.':'An AI assistant for SafeKid guidance and common questions.'}</p></div></div>
- <section class="sfai-intro card"><div class="sfai-intro-copy"><span class="sfai-status">${icon('sparkles',13)} ${S.locale==='vi'?'TRỢ LÝ HỖ TRỢ':'SUPPORT ASSISTANT'}</span><h2>${S.locale==='vi'?'SafeKid luôn sẵn sàng hỗ trợ gia đình bạn':'Here to help your family'}</h2><p>${S.locale==='vi'?'Hỏi về tính năng, quyền GPS, Safe Zone, SOS và cài đặt dữ liệu.':'Ask about features, GPS permissions, Safe Zones, SOS and local data settings.'}</p><a href="#/help" class="sfai-faq-link">${icon('book',15)} ${S.locale==='vi'?'Xem kho FAQ riêng':'Browse the separate FAQ'} ${icon('arrow',14)}</a></div><div class="sfai-intro-art"><img src="./assets/illustrations/mascot-wave.webp" alt=""></div></section>
+ <a class="sfai-compact-help text-link" href="#/help">${icon('book',16)} ${S.locale==='vi'?'Câu hỏi thường gặp':'Browse FAQ'} ${icon('arrow',14)}</a>
  <p class="sfai-disclaimer sfai-disclosure" role="note">${S.locale==='vi'?'Lưu ý: Đây là trợ lý AI, không phải nhân viên trực tuyến. Tin nhắn chỉ được xử lý bằng nội dung đã duyệt trên thiết bị và không được gửi tới đội ngũ SafeKid. S.F AI không truy cập đồng hồ, không định vị trẻ và không điều phối hỗ trợ khẩn cấp.':'Notice: This is an AI assistant, not a live human agent. Messages are handled using approved on-device content and are not sent to the SafeKid team. S.F AI cannot access a watch, locate a child or dispatch emergency help.'}</p>
  <section class="card sfai-card sfai-workspace"><div class="sfai-heading"><div class="sfai-avatar"><img src="./assets/illustrations/mascot-wave.webp" alt=""></div><div><b>S.F AI</b><small>${S.locale==='vi'?'Hỗ trợ trên thiết bị':'On-device support assistant'}</small></div>${badge(S.locale==='vi'?'Bản demo':'Demo','warning')}</div>
  <div class="sfai-prompts" aria-label="${S.locale==='vi'?'Câu hỏi gợi ý':'Suggested questions'}"><button type="button" data-sfai-prompt="${S.locale==='vi'?'Bắt đầu sử dụng SafeKid':'How do I get started with SafeKid?'}">${S.locale==='vi'?'Bắt đầu sử dụng':'Getting started'}</button><button type="button" data-sfai-prompt="${S.locale==='vi'?'Cấp quyền và sử dụng GPS':'GPS permissions and location'}">GPS</button><button type="button" data-sfai-prompt="${S.locale==='vi'?'Tạo và quản lý Safe Zone':'Create and manage a Safe Zone'}">Safe Zone</button><button type="button" data-sfai-prompt="${S.locale==='vi'?'SOS hoạt động thế nào?':'How does SOS work?'}">SOS</button></div>
@@ -455,6 +448,13 @@ function closeModalAndRestoreFocus(){
 const MOBILE_TEXT_ENTRY_SELECTOR='input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),textarea,[contenteditable="true"]';
 let mobileKeyboardListenersInstalled=false;
 let modalPointerActive=false;
+function syncNavIndicator(){
+ const nav=$('.mobile-nav');if(!nav)return;
+ const links=[...nav.querySelectorAll('a')];
+ const active=links.findIndex(link=>link.classList.contains('active'));
+ nav.style.setProperty('--nav-shift',`${Math.max(0,active)*nav.clientWidth/5}px`);
+}
+let keyboardViewportBaseline=window.innerHeight;
 function syncMobileKeyboardState(){
  if(modalPointerActive)return;
  const shell=$('.app-shell');if(!shell)return;
@@ -466,8 +466,19 @@ function syncMobileKeyboardState(){
   shell.style.setProperty('--dialog-viewport-height',`${viewport.height}px`);
   shell.style.setProperty('--dialog-viewport-top',`${viewport.offsetTop}px`);
  }
- const keyboardVisible=!viewport||(viewport.scale<=1.05&&window.innerHeight-viewport.height>100);
+ if(!textEntry)keyboardViewportBaseline=window.innerHeight;
+ const keyboardVisible=!viewport||(viewport.scale<=1.05&&Math.max(window.innerHeight,keyboardViewportBaseline)-viewport.height>100);
  shell.classList.toggle('keyboard-open',mobile&&textEntry&&keyboardVisible);
+ const chat=mobile&&S.route==='/sfai';
+ shell.classList.toggle('chat-screen',chat);
+ const stage=$('.route-stage',shell);
+ if(chat&&stage){
+  const header=$('.topbar',shell);
+  const top=Math.max(0,header.getBoundingClientRect().bottom-(viewport?.offsetTop||0));
+  const navHeight=shell.classList.contains('keyboard-open')?0:$('.mobile-nav',shell).getBoundingClientRect().height;
+  shell.style.setProperty('--chat-height',`${Math.max(160,(viewport?.height||window.innerHeight)-top-navHeight)}px`);
+ }
+ syncNavIndicator();
 }
 function installMobileKeyboardStateListeners(){
  if(mobileKeyboardListenersInstalled)return;
