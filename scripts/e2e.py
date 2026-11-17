@@ -228,6 +228,10 @@ try:
         }''')
         assert metrics['scroll'] <= metrics['viewport'], f'overflow {route} at {width}px: {metrics}'
         assert metrics['nav'] and metrics['nav']['bottom'] <= height, f'nav outside viewport {route} at {width}px: {metrics}'
+        if route == '#/sfai':
+          composer = page.locator('#sfai-form').evaluate("el => {const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};}")
+          nav_top = page.locator('.mobile-nav').evaluate("el => el.getBoundingClientRect().top")
+          assert composer['height'] >= 48 and composer['bottom'] <= nav_top + 1 and composer['bottom'] <= height, f'S.F AI composer must remain visible above bottom navigation at {width}px: composer={composer}, navTop={nav_top}, viewport={height}'
         assert len(metrics['links']) == 5 and all(x['height'] >= 44 and x['label'] for x in metrics['links']), f'five labelled touch targets required: {metrics}'
         assert sum(1 for x in metrics['links'] if x['active'] == 'page') == 1, f'exactly one active route must be announced: {metrics}'
         page.evaluate('window.scrollTo(0,document.documentElement.scrollHeight)')
