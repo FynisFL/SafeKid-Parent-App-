@@ -51,7 +51,7 @@ try:
     context = browser.new_context(viewport={'width':390, 'height':844}, device_scale_factor=1, is_mobile=True, has_touch=True)
     context.add_init_script(MAPLIBRE_MOCK)
     # Device emulation has no OS keyboard. Simulate its visual viewport resize.
-    context.add_init_script("""() => {
+    context.add_init_script("""(() => {
       const viewport=window.visualViewport;
       if(!viewport)return;
       const height=Object.getOwnPropertyDescriptor(VisualViewport.prototype,'height').get;
@@ -61,7 +61,7 @@ try:
       }});
       for(const event of ['focusin','focusout'])
         document.addEventListener(event,()=>requestAnimationFrame(()=>viewport.dispatchEvent(new Event('resize'))));
-    }""")
+    })();""")
     page = context.new_page()
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.on('console', lambda m: console_errors.append(m.text) if m.type == 'error' else None)
