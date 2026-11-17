@@ -88,7 +88,7 @@ try:
 
     # More hub and Safe Zone: test that an unselected location cannot save.
     page.locator('a[href="#/more"]').click()
-    page.locator('a[href="#/safe-zones"]').click()
+    page.locator('.more-hub a[href="#/safe-zones"]').click()
     page.locator('[data-action="modal-zone"]').first.click()
     page.locator('input[name="name"]').fill('QA Zone')
     page.locator('#zone-form button[type="submit"]').click()
@@ -108,7 +108,7 @@ try:
     results.append('Safe Zone search -> place selection -> radius -> save; blank-coordinate guard')
 
     # Location screen remains view-only, with no Safe Zone CRUD actions.
-    page.locator('a[href="#/location"]').click()
+    page.locator('.mobile-nav a[href="#/location"]').click()
     page.get_by_text('Bản đồ chỉ hiển thị', exact=True).wait_for(timeout=3000)
     assert page.locator('[data-action="modal-zone"]').count() == 0
     assert page.locator('[data-action^="zone-edit:"]').count() == 0
@@ -119,7 +119,7 @@ try:
 
     # Settings jump must open accordion without changing router route.
     page.locator('a[href="#/more"]').click()
-    page.locator('a[href="#/profile"]').click()
+    page.locator('.more-hub a[href="#/profile"]').click()
     assert page.url.endswith('#/profile')
     page.locator('[data-scroll-target="settings-notifications"]').click()
     assert page.url.endswith('#/profile'), f'Settings shortcut changed route: {page.url}'
@@ -127,7 +127,7 @@ try:
     results.append('Settings hub anchors stay inside profile route')
 
     # Growth form conditional UI.
-    page.locator('a[href="#/growth"]').click()
+    page.locator('.mobile-nav a[href="#/growth"]').click()
     page.locator('[data-action="modal-task"]').click()
     assert page.locator('#reminder-time-wrap').is_hidden()
     page.locator('input[name="reminderEnabled"]').check()
@@ -141,7 +141,7 @@ try:
     results.append('Growth conditional reminder and weekly weekday controls')
 
     # SOS cannot be duplicated while active or acknowledged.
-    page.locator('a[href="#/sos"]').click()
+    page.locator('.mobile-nav a[href="#/sos"]').click()
     page.locator('[data-action="sos-confirm"]').click()
     page.locator('[data-action="sos-trigger"]').click()
     page.get_by_text('Đang có một sự kiện SOS chưa xử lý', exact=False).wait_for(timeout=4000)
@@ -167,7 +167,7 @@ try:
     results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer')
     page.locator('a[href="#/more"]').click()
     page.locator('.support-entry-card--hub[href="#/sfai"]').wait_for(timeout=3000)
-    page.locator('a[href="#/help"]').click()
+    page.locator('.more-hub a[href="#/help"]').click()
     page.get_by_role('heading', name='Câu hỏi thường gặp', exact=True).wait_for(timeout=3000)
     assert page.locator('#faq-search').count() == 1
     assert page.locator('#sfai-form').count() == 0
