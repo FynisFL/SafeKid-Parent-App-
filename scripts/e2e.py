@@ -201,6 +201,9 @@ try:
         assert bottom, f'Bottom nav overlaps final content {route} at {width}px'
       page.set_viewport_size({'width':390,'height':844})
       page.wait_for_timeout(500)
+      page.evaluate('window.scrollTo(0,0)')
+      page.wait_for_timeout(120)
+      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390-viewport.png'))
       page.screenshot(path=str(SCREENSHOTS/f'redesign-{route[2:].replace("/", "-") or "home"}-390.png'),full_page=True)
     results.append('Mobile route geometry matrix: 7 routes × 5 phone widths; overflow and final-content/nav clearance')
 

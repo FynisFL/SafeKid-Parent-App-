@@ -258,3 +258,17 @@ body{overflow-x:clip;}
 .contact-channel small{font-size:10px;overflow-wrap:anywhere;}
 .contact-channel>svg:last-child{flex:none;color:#729097;}
 @media(max-width:767px){.contact-channel{min-height:58px;padding:10px;}}
+
+/* Final mobile polish: prevent truncation of quick actions and secondary tabs. */
+.home-intro .intro-date{width:max-content;max-width:100%;align-self:flex-start;white-space:nowrap;}
+.mobile-quick-actions>a b{display:block;width:100%;white-space:normal;overflow:visible;text-overflow:clip;text-align:center;overflow-wrap:anywhere;}
+@media(max-width:767px){
+  .mobile-quick-actions>a{min-width:0;}
+  .mobile-quick-actions>a b{font-size:clamp(9px,2.5vw,10px);line-height:1.2;}
+  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;overflow:visible;scroll-snap-type:none;}
+  .tabbar a{min-width:0;padding:9px 3px;text-align:center;font-size:10px;white-space:nowrap;}
+}
+@media(max-width:359px){
+  .tabbar{grid-template-columns:repeat(5,minmax(0,1fr));}
+  .tabbar a{font-size:9px;padding-inline:1px;}
+}
