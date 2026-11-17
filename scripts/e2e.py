@@ -177,6 +177,7 @@ try:
     assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Text focus must activate keyboard shell state'
     assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must yield space while a mobile text field is focused'
     page.locator('#sfai-form input[name="question"]').evaluate('(el) => el.blur()')
+    page.wait_for_function("!document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
     assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must return after text focus ends'
     results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer; keyboard shell hides/restores nav')
     page.locator('a[href="#/more"]').click()
