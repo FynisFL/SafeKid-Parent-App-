@@ -23,7 +23,7 @@ test('FAQ and S.F AI have separate routes and renderers',()=>{
 test('More hub exposes FAQ and S.F AI as independent destinations',()=>{
   const more=source.slice(source.indexOf('function renderMoreHub()'),source.indexOf('function renderHome()'));
   assert.match(more,/\\['\\/help','faqHub','book'\\]/);
-  assert.match(more,/href="#\\/sfai"/);
+  assert.ok(more.includes('href="#/sfai"'));
   assert.match(more,/support-entry-card--hub/);
 });
 
