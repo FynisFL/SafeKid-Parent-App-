@@ -247,3 +247,12 @@ body{overflow-x:clip;}
 @media(prefers-reduced-motion:reduce){
   .mobile-nav{transition:none!important;}
 }
+
+.contact-links-grid{display:grid;gap:8px;}
+.contact-channel{display:flex;align-items:center;gap:10px;min-width:0;padding:11px 12px;border:1px solid var(--sk-border);border-radius:13px;background:#fff;color:var(--sk-deep-blue);}
+.contact-channel-icon{width:36px;height:36px;display:grid;place-items:center;flex:0 0 36px;border-radius:11px;background:var(--sk-surface-soft);color:#168B91;}
+.contact-channel>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;}
+.contact-channel b{font-size:12px;}
+.contact-channel small{font-size:10px;overflow-wrap:anywhere;}
+.contact-channel>svg:last-child{flex:none;color:#729097;}
+@media(max-width:767px){.contact-channel{min-height:58px;padding:10px;}}
