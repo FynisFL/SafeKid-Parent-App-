@@ -95,7 +95,7 @@ try:
     page.wait_for_timeout(80)
     assert page.get_by_text('Hãy tìm hoặc chọn một vị trí trên bản đồ trước khi lưu.', exact=False).count() > 0
     assert page.get_by_text('Chưa có vùng an toàn nào', exact=False).count() == 0 or page.locator('.zone-card').count() == 0
-    page.locator('[data-action="modal-close"]').click()
+    page.locator('.modal-head [data-action="modal-close"]').click()
     page.locator('[data-action="modal-zone"]').first.click()
     page.locator('input[name="name"]').fill('QA Zone')
     page.locator('#zone-place-search').fill('Trường ABC')
