@@ -223,6 +223,7 @@ try:
     page.locator('#device-form [name="displayName"]').fill('Đồng hồ của bé')
     page.locator('#device-form [name="serialOrDeviceCode"]').fill('SAFEKID-' + '1234567890' * 6)
     page.locator('button[form="device-form"][type="submit"]').click()
+    page.locator('.device-card [data-action^="device-detail:"]').wait_for(timeout=5000)
     page.locator('.device-card [data-action^="device-detail:"]').click()
     page.wait_for_url(lambda url: '#/watch-passport-detail?device=' in url)
     device_route = '#' + page.url.split('#', 1)[1]
@@ -336,6 +337,10 @@ try:
 except Exception as e:
   import traceback
   traceback.print_exc()
+  try:
+    print('Failure state: ' + page.locator('body').inner_text()[-5000:], file=sys.stderr)
+  except Exception:
+    pass
   print(f'E2E FAILED/BLOCKED: {e}', file=sys.stderr)
   if errors: print('Page errors: ' + '; '.join(errors), file=sys.stderr)
   if console_errors: print('Console errors: ' + '; '.join(console_errors[:15]), file=sys.stderr)
