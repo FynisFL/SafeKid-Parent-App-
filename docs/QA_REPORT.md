@@ -8,13 +8,13 @@ Release scope: all five phases approved from the V6 UX/UI audit.
 
 | Gate | Result | Evidence / limit |
 |---|---|---|
-| Domain + source regression | **PASS — 66/66** | `npm test`; geofence, Growth, S.F AI, geocoding, Safe Zone validation, view-only route boundary, SOS lifecycle/audio, onboarding, navigation, modal keyboard behavior and responsive source checks. |
-| JavaScript syntax | **PASS — 25 files** | `npm run typecheck`; syntax validation only, not TypeScript. |
+| Domain + source regression | **PASS — 78/78** | `npm test`; geofence, Growth, S.F AI, geocoding, Safe Zone validation, view-only route boundary, SOS lifecycle/audio, onboarding, navigation, modal keyboard behavior and responsive source checks. |
+| JavaScript syntax | **PASS — 26 files** | `npm run typecheck`; syntax validation only, not TypeScript. |
 | Privacy lint | **PASS — 25 files** | `npm run lint`. |
 | Static PWA build | **PASS** | `npm run build`; `dist/` regenerated and MapTiler default style injected. |
 | CSS parser | **PASS** | PostCSS parsed 1,662 rules, 38 media queries and 11 keyframes with no parser error. |
 | Local HTTP smoke | **PASS — 8/8 HTTP 200** | `/`, `/src/main.js`, Safe Zone and SOS domain modules, geocoding service, mascot, `/sw.js`, `/manifest.webmanifest`. |
-| Playwright E2E | **PASS** | GitHub Actions run #44115276941: ten routes × six mobile viewport configurations, horizontal-overflow and bottom-navigation clearance assertions, Plans/Free-Plus transparency, S.F AI composer visibility; 17 screenshots uploaded. |
+| Playwright E2E | **PASS** | GitHub Actions run #44116845251: ten routes × six mobile viewport configurations, horizontal-overflow and bottom-navigation clearance assertions, Plans/Free-Plus transparency, S.F AI composer visibility; 37 screenshots uploaded. |
 | Rendered screenshot / computed overflow | **PASS — CI matrix** | Playwright captured 17 screenshots and measured `scrollWidth` / fixed-nav geometry for the route matrix. The map is a local fixture; live provider rendering remains separate. |
 | MapTiler live render/geocoding | **NOT VERIFIED** | Source configuration and mocked-flow test exist; live browser network/tile rendering requires a permitted browser and restricted valid key. |
 | Physical phone GPS, notification and SOS alarm | **NOT VERIFIED** | Requires real HTTPS deploy and iOS Safari/Android Chrome devices. |
@@ -109,7 +109,7 @@ npm test          PASS — 66/66
 npm run typecheck PASS — 25 JavaScript syntax files
 npm run lint      PASS — 25 JavaScript files
 npm run build     PASS — static PWA generated in dist/
-npm run test:e2e PASS — GitHub Actions run #44115276941; 10 routes × 6 phone viewports; 17 screenshots
+npm run test:e2e PASS — GitHub Actions run #44115276941; 10 routes × 6 phone viewports; 37 screenshots
 ```
 
 HTTP smoke test: 8/8 resources returned HTTP 200. Build output includes `safekid-pwa-v7-mobile-shell-r2` and the bundled MapTiler style URL. `.env` is excluded from source distribution.
@@ -143,8 +143,8 @@ HTTP smoke test: 8/8 resources returned HTTP 200. Build output includes `safekid
 - SOS hold button now uses a darker emergency fill with white labels. A contrast regression test checks both gradient colors against WCAG AA 4.5:1 for normal text.
 
 ### Phase 5 — UAT and regression
-- Regression suite: 78 tests after the SOS contrast check was added; final CI run must remain green.
-- Browser E2E checks ten routes across six mobile viewport configurations and captures 17 screenshots.
+- Regression suite: 78/78 tests pass in GitHub Actions run #44116845251.
+- Browser E2E checks ten routes across six mobile viewport configurations and captures 37 screenshots.
 - Real MapTiler tiles/geocoding, physical Android/iOS GPS/notifications/audio/haptics and VoiceOver/TalkBack remain manual device UAT; they are not claimed as passed.
 
 ## 6. Release interpretation
