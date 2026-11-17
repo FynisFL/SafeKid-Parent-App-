@@ -28,8 +28,8 @@ This release contains the five approved UX remediation phases and passes its aut
 ## UX and QA verification
 
 - Automated tests pass 66/66. JavaScript syntax validation passes 25 files. Privacy lint passes 25 files. Static build passes.
-- Playwright navigation to local V7 app is blocked by the environment (`ERR_BLOCKED_BY_ADMINISTRATOR`) before the first page loads. The E2E suite is authored but no E2E journey is claimed as passed.
-- No valid screenshots or computed `scrollWidth` measurements were captured. Breakpoint CSS is parsed and source-reviewed, but the visual matrix at phone/tablet/desktop widths remains unverified.
+- Playwright browser E2E now passes in GitHub Actions. The suite checks ten routes across six compact/mobile viewport configurations, measures horizontal overflow and bottom-navigation clearance, and captures 17 screenshots. The map is a local fixture in browser E2E; this does not verify live MapTiler tiles or geocoding.
+- GitHub Actions captures the mobile route screenshots and computes `scrollWidth` for the route/viewport matrix. These browser screenshots are not a substitute for physical Android/iOS rendering or OS-level safe-area behavior.
 - Modal focus behavior is implemented and source-regression-tested; keyboard operation and screen reader behavior need actual browser/assistive-tech UAT.
 - No physical-device test has verified GPS permissions, MapTiler rendering, notifications, sound/haptics, PWA installation, safe-area behavior or geofence transitions.
 - The app must be served via HTTPS (or localhost) for browser geolocation and PWA installation.
