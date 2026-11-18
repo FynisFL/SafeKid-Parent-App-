@@ -465,6 +465,42 @@ try:
       page.screenshot(path=str(SCREENSHOTS/f'v7-sos-{width}.png'), full_page=True)
     results.append('Post-setup responsive overflow/screenshot matrix 320–1920px')
 
+    for width in [320,359,374,375,390,767,768,820,1023,1024,1200,1536,1920]:
+      page.set_viewport_size({'width':width,'height':900})
+      page.goto('http://127.0.0.1:4173/#/home',wait_until='domcontentloaded')
+      page.locator('.home-shortcuts').wait_for()
+      page.wait_for_timeout(500)
+      centers=page.locator('.home-shortcuts a').evaluate_all("""els=>els.map(el=>{
+        const icon=el.querySelector('svg').getBoundingClientRect(),text=el.querySelector('b').getBoundingClientRect();
+        return Math.abs(icon.left+icon.width/2-text.left-text.width/2);
+      })""")
+      assert max(centers)<1, ('Shortcut alignment',width,centers)
+      assert page.locator('.location-feature .feature-actions .btn').evaluate_all("els=>els.every(el=>el.getBoundingClientRect().height>=44&&parseFloat(getComputedStyle(el).fontSize)>=14)")
+
+      if 768<=width<=1023:
+        assert page.locator('.sidebar').evaluate("el=>el.getBoundingClientRect().width")==80
+        assert page.locator('.sidebar .nav-icon').evaluate_all("els=>els.every(el=>el.getBoundingClientRect().width>=40)")
+        assert page.locator('.sidebar .nav-item').evaluate_all("els=>els.every(el=>!!el.getAttribute('aria-label'))")
+      if width<768:
+        assert page.locator('.family-dock').evaluate("""nav=>{
+          const box=nav.getBoundingClientRect();
+          return [...nav.querySelectorAll('a>span:last-child')].every(el=>el.getBoundingClientRect().bottom<=box.bottom);
+        }"""), ('Navbar labels outside glass',width)
+      page.goto('http://127.0.0.1:4173/#/profile',wait_until='domcontentloaded')
+      page.locator('#settings-family').wait_for()
+      assert page.locator('#settings-notifications').evaluate("el=>!el.open && el.getBoundingClientRect().height<150")
+      if width<=1023:
+        assert page.locator('.settings-hub').evaluate("el=>getComputedStyle(el).gridTemplateColumns.split(' ').length")==1
+      page.goto('http://127.0.0.1:4173/#/growth',wait_until='domcontentloaded')
+      page.locator('.tabbar').wait_for()
+      widths=page.locator('.tabbar>a').evaluate_all("els=>els.map(el=>el.getBoundingClientRect().width)")
+      assert max(widths)-min(widths)<1, ('Growth tabs unequal',width,widths)
+    page.goto('http://127.0.0.1:4173/#/help',wait_until='domcontentloaded')
+    page.locator('.faq-item').first.wait_for()
+    bold=page.locator('.faq-answer strong').all_text_contents()
+    assert any('điện thoại' in text for text in bold), ('FAQ emphasis not rendered',bold)
+    results.append('Reported layout regressions: tablet navigation, dock labels, shortcut centers, settings cards, Growth tabs and safe FAQ emphasis')
+
     if errors:
       raise AssertionError('Browser page errors: ' + '; '.join(errors))
     browser.close()
