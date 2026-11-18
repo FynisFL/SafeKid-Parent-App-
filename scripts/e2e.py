@@ -501,6 +501,35 @@ try:
     assert any('điện thoại' in text for text in bold), ('FAQ emphasis not rendered',bold)
     results.append('Reported layout regressions: tablet navigation, dock labels, shortcut centers, settings cards, Growth tabs and safe FAQ emphasis')
 
+    # Decorative companions may never cover header text or a primary action.
+    illustrated_routes=['more','help','plans','profile','settings','watch-passport','contacts','alerts']
+    for width in [320,390,606,624,767,768,1023,1024,1440,1920]:
+      page.set_viewport_size({'width':width,'height':900})
+      for route in illustrated_routes:
+        page.goto('http://127.0.0.1:4173/#/'+route,wait_until='domcontentloaded')
+        page.locator('.illustrated-intro .page-companion').wait_for()
+        page.wait_for_timeout(360)
+        geometry=page.locator('.illustrated-intro').evaluate("""intro=>{
+          const art=intro.querySelector('.page-companion').getBoundingClientRect();
+          const box=intro.getBoundingClientRect();
+          const items=[...intro.querySelectorAll('h1,p,.btn')].map(el=>{
+            const r=el.getBoundingClientRect();
+            return {text:el.textContent.trim(),overlap:Math.min(art.right,r.right)-Math.max(art.left,r.left)>1&&Math.min(art.bottom,r.bottom)-Math.max(art.top,r.top)>1};
+          });
+          return {items,artInside:art.left>=box.left&&art.right<=box.right&&art.top>=box.top&&art.bottom<=box.bottom};
+        }""")
+        assert geometry['artInside'] and not any(item['overlap'] for item in geometry['items']), (width,route,geometry)
+        assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), (width,route,'Overflow')
+        if route=='profile' and width<=767:
+          sizes=page.locator('.settings-hub-shortcuts').first.evaluate("""el=>{
+            const last=el.lastElementChild.getBoundingClientRect(),box=el.getBoundingClientRect();
+            return {last:last.width,container:box.width};
+          }""")
+          assert abs(sizes['last']-sizes['container'])<1, (width,sizes)
+        if route in ['watch-passport','profile'] and width in [390,624,768,1920]:
+          page.screenshot(path=str(SCREENSHOTS/f'feedback-{route}-{width}.png'),full_page=True)
+    results.append('Illustrated headers: eight routes at ten viewport widths, no art/text/CTA collision; balanced settings shortcuts')
+
     if errors:
       raise AssertionError('Browser page errors: ' + '; '.join(errors))
     browser.close()
