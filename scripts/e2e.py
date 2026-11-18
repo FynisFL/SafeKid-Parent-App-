@@ -334,6 +334,9 @@ try:
           assert abs(summary[0]['height'] - summary[1]['height']) < 1 and abs(summary[0]['value'] - summary[1]['value']) < 1, f'Growth summaries must align: {summary}'
 
           tabs = page.locator('.tabbar a').evaluate_all("els => els.map(el => ({width:el.offsetWidth,height:el.offsetHeight}))")
+          tab_alignment = page.locator('.tabbar a').evaluate_all("els => els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,width:r.width,top:r.top};})")
+          assert max(x['width'] for x in tab_alignment)-min(x['width'] for x in tab_alignment)<1 and max(x['top'] for x in tab_alignment)-min(x['top'] for x in tab_alignment)<1, f'Growth tabs must share equal columns: {tab_alignment}'
+          assert abs((tab_alignment[1]['left']-tab_alignment[0]['left'])-tab_alignment[0]['width'])<1, f'Growth tabs must not bunch on the left: {tab_alignment}'
           assert len(tabs) == 5 and all(x['height'] >= 44 for x in tabs), f'Growth tabs must keep usable touch targets at {width}px: {tabs}'
         metrics=page.evaluate('''() => {
           const nav=document.querySelector('.mobile-nav');
@@ -345,6 +348,16 @@ try:
             last:wrap?.lastElementChild?{bottom:wrap.lastElementChild.getBoundingClientRect().bottom}:null};
         }''')
         assert metrics['scroll'] <= metrics['viewport'], f'overflow {route} at {width}px: {metrics}'
+        page.wait_for_function('''() => {
+          const nav=document.querySelector('.family-dock'),active=nav.querySelector('a.active');
+          if(active.classList.contains('mobile-sos-link'))return true;
+          const style=getComputedStyle(nav,'::after'),matrix=new DOMMatrixReadOnly(style.transform);
+          const box=nav.getBoundingClientRect(),target=active.getBoundingClientRect();
+          const center=box.left+parseFloat(style.left)+matrix.m41+parseFloat(style.width)/2;
+          return Math.abs(center-target.left-target.width/2)<1;
+        }''')
+        pill_geometry = page.locator('.family-dock').evaluate("el=>{const s=getComputedStyle(el,'::after'),a=el.querySelector('a.active').getBoundingClientRect();return {width:parseFloat(s.width),targetWidth:a.width,inset:parseFloat(s.left)};}")
+        assert abs(pill_geometry['targetWidth']-pill_geometry['width']-12)<1 and pill_geometry['inset']==6, f'Navigation selection must have equal side insets: {pill_geometry}'
         dock_geometry = page.locator('.family-dock').evaluate("el=>{const r=el.getBoundingClientRect(),b=el.querySelector('.mobile-sos-link .dock-icon').getBoundingClientRect();return {center:r.left+r.width/2,buttonCenter:b.left+b.width/2,relativeY:b.top+b.height/2-r.top};}")
         assert abs(dock_geometry['center']-dock_geometry['buttonCenter'])<1 and abs(dock_geometry['relativeY']-9)<1, f'SOS must share the notch center: {dock_geometry}'
         assert metrics['nav'] and metrics['nav']['bottom'] <= height, f'nav outside viewport {route} at {width}px: {metrics}'
