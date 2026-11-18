@@ -184,6 +184,7 @@ try:
     page.locator('.sos-sound-settings summary').click()
     page.locator('#sos-audio-form select').select_option('urgent')
     page.locator('#sos-audio-form button[type="submit"]').click()
+    page.locator('#sos-audio-form option[value="urgent"][selected]').wait_for(state='attached')
     page.reload()
     page.locator('.sos-sound-settings summary').click()
     assert page.locator('#sos-audio-form select').get_attribute('name') == 'tone'
