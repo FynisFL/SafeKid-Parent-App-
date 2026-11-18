@@ -198,12 +198,39 @@ try:
     assert keyboard_composer['top'] >= 0 and keyboard_composer['bottom'] <= keyboard_composer['viewport'] + 1, f'Composer must stay above the keyboard: {keyboard_composer}'
     page.locator('#sfai-form input[name="question"]').press('Enter')
     assert page.locator('#sfai-form input[name="question"]').evaluate('el => document.activeElement === el'), 'Sending with Enter must retain input focus'
-    assert page.locator('#sfai-form input[name="question"]').input_value() == ''
+    page.wait_for_function("document.querySelector('#sfai-form input[name=question]')?.value === ''")
     assert page.locator('.chat-message.user').count() > 0
+    page.locator('.sfai-thinking').wait_for(state='detached')
+    page.locator('.chat-message.assistant').first.wait_for()
     page.locator('#sfai-form input[name="question"]').evaluate('(el) => el.blur()')
     page.wait_for_function("!document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
     assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must return after text focus ends'
     results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer; keyboard shell hides/restores nav')
+    saved_text = page.locator('.chat-message.user').first.inner_text()
+    page.reload()
+    page.locator('.chat-message.user').first.wait_for()
+    assert page.locator('.chat-message.user').first.inner_text() == saved_text
+    page.locator('[data-action="sfai-new"]').click()
+    page.locator('.sfai-welcome').wait_for()
+    assert page.locator('.chat-message.user').count() == 0
+    page.locator('[data-action="sfai-history"]').click()
+    page.locator('.sfai-session-row').filter(has_text=saved_text).locator('.sfai-session-open').click()
+    page.locator('.chat-message.user').first.wait_for()
+    assert page.locator('.chat-message.user').first.inner_text() == saved_text
+    page.locator('[data-action="sfai-history"]').click()
+    page.locator('.sfai-session-row').filter(has_text=saved_text).get_by_text('Đổi tên', exact=True).click()
+    page.locator('#sfai-rename-form input').fill('GPS gia đình')
+    page.locator('button[form="sfai-rename-form"][type="submit"]').click()
+    page.locator('.sfai-session-title').filter(has_text='GPS gia đình').wait_for()
+    page.locator('[data-action="sfai-history"]').click()
+    page.locator('.sfai-session-row').filter(has_text='0 tin nhắn').get_by_text('Xóa', exact=True).click()
+    page.locator('[data-action="confirm-pending-action"]').click()
+    page.locator('.modal-backdrop').wait_for(state='detached')
+    page.reload()
+    page.locator('.sfai-session-title').filter(has_text='GPS gia đình').wait_for()
+    assert page.locator('.chat-message.user').first.inner_text() == saved_text
+    results.append('Local sessions survive reload, remain isolated, and support rename and delete')
+
     page.locator('a[href="#/more"]').click()
     page.locator('.support-entry-card--hub[href="#/sfai"]').wait_for(timeout=3000)
     page.locator('.more-hub a[href="#/help"]').click()
@@ -318,7 +345,7 @@ try:
         page.wait_for_timeout(30)
         bottom=page.evaluate('''() => {
           const nav=document.querySelector('.mobile-nav'), wrap=document.querySelector('.page-wrap');
-          return nav&&wrap?.lastElementChild ? wrap.lastElementChild.getBoundingClientRect().bottom <= nav.getBoundingClientRect().top + 1 : true;
+          return nav&&wrap?.lastElementChild ? wrap.lastElementChild.getBoundingClientRect().bottom <= Math.min(nav.getBoundingClientRect().top,nav.querySelector('.mobile-sos-link .mobile-nav-icon').getBoundingClientRect().top) + 1 : true;
         }''')
         assert bottom, f'Bottom nav overlaps final content {route} at {width}px'
       page.set_viewport_size({'width':390,'height':844})

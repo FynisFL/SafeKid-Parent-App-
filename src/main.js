@@ -117,6 +117,7 @@ function render(){
   return;
  }
 
+ if(S.route==='/sfai'&&!currentSfaiSession()){sfaiActiveId=uid();sfaiSessions=[{id:sfaiActiveId,title:S.locale==='vi'?'Cuộc trò chuyện mới':'New conversation',messages:[],createdAt:iso(),updatedAt:iso()}];S.sfaiMessages=[];}
  const pageMarkup=renderPage();
  const next=document.createElement('template');
  next.innerHTML=renderShell(pageMarkup);
@@ -326,17 +327,108 @@ function renderFaqItems(items,q='',category='all'){
  return filtered.map((x,i)=>`<details class="faq-item"><summary><span class="faq-index">${String(i+1).padStart(2,'0')}</span><span>${esc(x.question)}</span><span class="faq-chevron">${icon('chevronDown',17)}</span></summary><div class="faq-answer"><p>${esc(x.answer).replace(/\n/g,'<br>')}</p></div></details>`).join('');
 }
 function renderChatMessage(m){return `<div class="chat-message ${m.role}">${esc(m.text).replace(/\n/g,'<br>')}${m.source?`<small>${S.locale==='vi'?'Nguồn':'Source'}: ${esc(m.source)}</small>`:''}${m.kind==='emergency'?`<a href="#/sos" class="btn btn-danger btn-small">${t('openSos')}</a>`:''}${m.kind==='scope'?`<div class="handoff-label">${t('demoLabel')}</div><div class="support-links">${contactLinks()}</div>`:''}</div>`;}
-function renderSfai(){
- return `<div class="page-intro"><div><span class="eyebrow">CUSTOMER CARE</span><h1>S.F AI</h1><p>${S.locale==='vi'?'Trợ lý AI hướng dẫn sử dụng SafeKid và giải đáp các câu hỏi phổ biến.':'An AI assistant for SafeKid guidance and common questions.'}</p></div></div>
- <a class="sfai-compact-help text-link" href="#/help">${icon('book',16)} ${S.locale==='vi'?'Câu hỏi thường gặp':'Browse FAQ'} ${icon('arrow',14)}</a>
- <p class="sfai-disclaimer sfai-disclosure" role="note">${S.locale==='vi'?'Lưu ý: Đây là trợ lý AI, không phải nhân viên trực tuyến. Tin nhắn chỉ được xử lý bằng nội dung đã duyệt trên thiết bị và không được gửi tới đội ngũ SafeKid. S.F AI không truy cập đồng hồ, không định vị trẻ và không điều phối hỗ trợ khẩn cấp.':'Notice: This is an AI assistant, not a live human agent. Messages are handled using approved on-device content and are not sent to the SafeKid team. S.F AI cannot access a watch, locate a child or dispatch emergency help.'}</p>
- <section class="card sfai-card sfai-workspace"><div class="sfai-heading"><div class="sfai-avatar"><img src="./assets/illustrations/mascot-wave.webp" alt=""></div><div><b>S.F AI</b><small>${S.locale==='vi'?'Hỗ trợ trên thiết bị':'On-device support assistant'}</small></div>${badge(S.locale==='vi'?'Bản demo':'Demo','warning')}</div>
- <div class="sfai-prompts" aria-label="${S.locale==='vi'?'Câu hỏi gợi ý':'Suggested questions'}"><button type="button" data-sfai-prompt="${S.locale==='vi'?'Bắt đầu sử dụng SafeKid':'How do I get started with SafeKid?'}">${S.locale==='vi'?'Bắt đầu sử dụng':'Getting started'}</button><button type="button" data-sfai-prompt="${S.locale==='vi'?'Cấp quyền và sử dụng GPS':'GPS permissions and location'}">GPS</button><button type="button" data-sfai-prompt="${S.locale==='vi'?'Tạo và quản lý Safe Zone':'Create and manage a Safe Zone'}">Safe Zone</button><button type="button" data-sfai-prompt="${S.locale==='vi'?'SOS hoạt động thế nào?':'How does SOS work?'}">SOS</button></div>
- <div class="sfai-messages" id="sfai-messages">${(S.sfaiMessages.length?S.sfaiMessages:[{role:'assistant',text:(S.content?.responses?.[S.locale]?.greeting||SFAI_COPY[S.locale].greeting)}]).map(renderChatMessage).join('')}</div>
- <form id="sfai-form" class="chat-form"><input name="question" maxlength="400" required placeholder="${t('ask')}"><button type="submit" class="btn btn-primary" aria-label="${t('send')}">${icon('arrow')}</button></form>
- </section>
- <section class="card support-card"><div class="section-row"><h2>${S.locale==='vi'?'Kênh CSKH':'Customer-care channels'}</h2><span class="muted">${S.locale==='vi'?'Liên hệ trực tiếp':'Direct contact'}</span></div>${contactLinks()}</section>`;
+let sfaiSessions=[];
+let sfaiActiveId=null;
+const sfaiRequests=new Map();
+function currentSfaiSession(){return sfaiSessions.find(session=>session.id===sfaiActiveId);}
+async function loadSfaiSessions(){
+ const records=await getAll('meta');
+ sfaiSessions=records.filter(row=>row.key.startsWith('sfai-session:')&&row.value?.id&&Array.isArray(row.value.messages)).map(row=>row.value);
+ sfaiActiveId=records.find(row=>row.key==='sfai-active')?.value;
+ if(!currentSfaiSession())sfaiActiveId=sfaiSessions[0]?.id;
+ if(!sfaiActiveId)await newSfaiSession();
+ S.sfaiMessages=currentSfaiSession().messages;
 }
+async function persistSfaiSession(session){
+ await put('meta',{key:'sfai-session:'+session.id,value:session});
+}
+async function newSfaiSession(){
+ const session={id:uid(),title:S.locale==='vi'?'Cuộc trò chuyện mới':'New conversation',messages:[],createdAt:iso(),updatedAt:iso()};
+ await persistSfaiSession(session);
+ sfaiSessions.unshift(session);sfaiActiveId=session.id;S.sfaiMessages=session.messages;
+ await put('meta',{key:'sfai-active',value:session.id});
+}
+function renderSfaiThinking(){
+ return sfaiRequests.has(sfaiActiveId)?`<div class="sfai-thinking" role="status"><span class="thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>${S.locale==='vi'?'Đang tra cứu nội dung trên máy…':'Looking up on-device content…'}</span><button class="text-btn" data-action="sfai-stop">${S.locale==='vi'?'Dừng':'Stop'}</button></div>`:'';
+}
+function renderSfaiConversation(){
+ const messages=currentSfaiSession()?.messages||[];
+ if(messages.length)return messages.map((message,index)=>`<div class="sfai-message-group">${renderChatMessage(message)}${message.role==='assistant'?`<button type="button" class="sfai-copy text-btn" data-action="sfai-copy:${index}">${S.locale==='vi'?'Sao chép':'Copy'}</button>`:''}</div>`).join('')+renderSfaiThinking();
+ const vi=S.locale==='vi';
+ const prompts=[
+  ['navigation',vi?'Cấp quyền và sử dụng GPS':'GPS permissions and location',vi?'Vị trí & GPS':'Location & GPS'],
+  ['shield',vi?'Tạo và quản lý Safe Zone':'Create and manage a Safe Zone',vi?'Vùng an toàn':'Safe Zones'],
+  ['sos',vi?'SOS hoạt động thế nào?':'How does SOS work?',vi?'Sử dụng SOS':'Using SOS'],
+  ['settings',vi?'Bắt đầu sử dụng SafeKid':'How do I get started with SafeKid?',vi?'Bắt đầu sử dụng':'Getting started'],
+ ];
+ return `<div class="sfai-welcome"><img src="./assets/illustrations/mascot-wave.webp" width="76" height="76" alt=""><h2>${vi?'Mình có thể giúp gì<br>cho gia đình bạn?':'How can I help<br>your family today?'}</h2><div class="sfai-prompts">${prompts.map(([ico,prompt,label])=>`<button type="button" data-sfai-prompt="${esc(prompt)}"><span>${icon(ico,22)}</span><b>${label}</b>${icon('arrow',15)}</button>`).join('')}</div></div>`;
+}
+function refreshSfaiConversation(){
+ if(S.route!=='/sfai')return;
+ const messages=$('#sfai-messages');if(!messages)return;
+ messages.innerHTML=renderSfaiConversation();
+ messages.scrollTop=messages.scrollHeight;
+ const submit=$('#sfai-form [type=submit]');
+ if(submit)submit.disabled=sfaiRequests.has(sfaiActiveId);
+ lastPageMarkup=renderPage();
+}
+async function sendSfaiQuestion(form){
+ const session=currentSfaiSession();
+ const question=String(new FormData(form).get('question')||'').trim();
+ if(!session||!question||sfaiRequests.has(session.id))return;
+ const request={cancelled:false};sfaiRequests.set(session.id,request);
+ const previous=session.messages.slice();
+ session.messages.push({role:'user',text:question});
+ if(!previous.length)session.title=question.slice(0,60);
+ session.updatedAt=iso();
+ try{
+  await persistSfaiSession(session);
+ }catch(error){
+  session.messages=previous;S.sfaiMessages=session.messages;sfaiRequests.delete(session.id);throw error;
+ }
+ if(request.cancelled)return;
+ form.reset();refreshSfaiConversation();
+ const response=answerSfai(question);
+ // Emergency guidance appears immediately. Other answers get a brief visual lookup state.
+ if(response.kind!=='emergency')await new Promise(resolve=>{request.finish=resolve;request.timer=setTimeout(resolve,650);});
+ if(request.cancelled)return;
+ const answer={...response,role:'assistant'};
+ session.messages.push(answer);session.updatedAt=iso();
+ try{await persistSfaiSession(session);}
+ catch(error){session.messages.pop();toast(S.locale==='vi'?'Không lưu được câu trả lời. Hãy thử lại.':'Could not save the answer. Try again.','error');}
+ finally{sfaiRequests.delete(session.id);if(sfaiActiveId===session.id)refreshSfaiConversation();}
+}
+function cancelSfaiRequest(id){
+ const request=sfaiRequests.get(id);if(!request)return;
+ request.cancelled=true;clearTimeout(request.timer);request.finish?.();sfaiRequests.delete(id);
+}
+async function handleSfaiAction(action){
+ if(action==='sfai-new'){await newSfaiSession();S.modal=null;render();return;}
+ if(action==='sfai-history'){S.modal={type:'sfai-history'};render();return;}
+ if(action==='sfai-stop'){cancelSfaiRequest(sfaiActiveId);refreshSfaiConversation();return;}
+ const [kind,id]=action.split(':');
+ if(kind==='sfai-copy'){await navigator.clipboard.writeText(currentSfaiSession().messages[Number(id)].text);toast(S.locale==='vi'?'Đã sao chép':'Copied');return;}
+ const session=sfaiSessions.find(item=>item.id===id);if(!session)return;
+ if(kind==='sfai-open'){
+  sfaiActiveId=id;S.sfaiMessages=session.messages;
+  await put('meta',{key:'sfai-active',value:id});S.modal=null;render();return;
+ }
+ if(kind==='sfai-rename'){S.modal={type:'sfai-rename',id};render();return;}
+ if(kind==='sfai-delete'){
+  S.modal={type:'confirm',title:S.locale==='vi'?'Xóa cuộc trò chuyện?':'Delete conversation?',message:session.title,confirmLabel:t('delete'),confirmAction:'sfai-delete-confirm',entityId:id};render();
+ }
+}
+function renderSfai(){
+ const vi=S.locale==='vi';
+ return `<div class="page-intro"><div><h1>S.F AI</h1></div></div>
+ <div class="sfai-toolbar"><h1>S.F AI</h1><a class="sfai-compact-help text-link" href="#/help">${icon('book',16)} FAQ</a><button class="icon-btn" data-action="sfai-new" aria-label="${vi?'Cuộc trò chuyện mới':'New conversation'}">${icon('plus',20)}</button><button class="icon-btn" data-action="sfai-history" aria-label="${vi?'Lịch sử hội thoại':'Conversation history'}">${icon('clock',20)}</button></div>
+ <p class="sfai-disclosure" role="note">${vi?'Trợ lý trên thiết bị, không phải nhân viên trực tuyến. Tin nhắn lưu trên máy và không được gửi tới đội ngũ SafeKid. Câu trả lời dựa trên nội dung hướng dẫn đã duyệt.':'On-device assistant, not a live human agent. Messages stay on this device and are not sent to the SafeKid team. Answers use approved guidance.'}</p>
+ <section class="sfai-workspace"><div class="sfai-session-title">${esc(currentSfaiSession()?.title||'S.F AI')}</div>
+ <div class="sfai-messages" id="sfai-messages" role="log" aria-live="polite" aria-relevant="additions">${renderSfaiConversation()}</div>
+ <form id="sfai-form" class="chat-form"><input name="question" maxlength="400" required aria-label="${t('ask')}" placeholder="${t('ask')}" autocomplete="off"><button type="submit" class="btn btn-primary" aria-label="${t('send')}" ${sfaiRequests.has(sfaiActiveId)?'disabled':''}>${icon('arrow',20)}</button></form></section>
+ <section class="card support-card"><h2>${vi?'Kênh CSKH':'Support channels'}</h2>${contactLinks()}</section>`;
+}
+
 function answerSfai(question){return routeSfaiQuestion(question,S.locale,S.content);}
 
 function renderPlans(){
@@ -364,7 +456,9 @@ function renderPlans(){
 }
 function renderProfile(){return `<div class="page-intro"><div><span class="eyebrow">PREFERENCES & PRIVACY</span><h1>${t('profile')}</h1><p>${t('localOnly')}</p></div></div><nav class="settings-hub-shortcuts" aria-label="${S.locale==='vi'?'Nhóm cài đặt':'Settings sections'}"><button type="button" class="settings-hub-jump" data-scroll-target="settings-family">${icon('user',18)}<span>${S.locale==='vi'?'Gia đình':'Family'}</span></button><button type="button" class="settings-hub-jump" data-scroll-target="settings-notifications">${icon('bell',18)}<span>${S.locale==='vi'?'Thông báo':'Alerts'}</span></button><button type="button" class="settings-hub-jump" data-scroll-target="settings-privacy">${icon('shield',18)}<span>${S.locale==='vi'?'Riêng tư':'Privacy'}</span></button><button type="button" class="settings-hub-jump" data-scroll-target="settings-data">${icon('database',18)}<span>${S.locale==='vi'?'Sao lưu':'Backup'}</span></button></nav><div class="settings-hub"><details class="card settings-section" id="settings-family" open><summary><span class="settings-section-icon">${icon('user',19)}</span><span><b>${S.locale==='vi'?'Hồ sơ gia đình':'Family profile'}</b><small>${S.locale==='vi'?'Thông tin phụ huynh và hồ sơ trẻ':'Parent and child profile details'}</small></span><span class="settings-chevron">${icon('chevronDown',17)}</span></summary><div class="settings-section-body"><form id="profile-form" class="form-stack"><label>${t('parentName')}<input name="parentName" required maxlength="60" value="${esc(S.profile?.displayName||'')}"></label><label>${t('childName')}<input name="childName" maxlength="60" value="${esc(S.children[0]?.displayName||'')}"></label><label>${t('language')}<select name="locale"><option value="vi" ${S.locale==='vi'?'selected':''}>Tiếng Việt</option><option value="en" ${S.locale==='en'?'selected':''}>English</option></select></label><button class="btn btn-primary" type="submit">${t('save')}</button></form></div></details><details class="card settings-section" id="settings-notifications"><summary><span class="settings-section-icon">${icon('bell',19)}</span><span><b>${t('notifications')}</b><small>${S.locale==='vi'?'Âm thanh, rung và cảnh báo cục bộ':'Sound, haptics and local alerts'}</small></span><span class="settings-chevron">${icon('chevronDown',17)}</span></summary><div class="settings-section-body"><div class="toggle-list">${[['sound',S.locale==='vi'?'Âm thanh':'Sound'],['haptics',S.locale==='vi'?'Rung':'Haptics'],['sos',S.locale==='vi'?'Thông báo SOS':'SOS notifications'],['safeZone',S.locale==='vi'?'Cảnh báo Safe Zone':'Safe Zone alerts'],['reminders',S.locale==='vi'?'Nhắc nhiệm vụ':'Task reminders']].map(([k,l])=>`<label class="toggle-row"><span>${l}</span><input type="checkbox" data-pref="${k}" ${S.prefs[k]?'checked':''}><i></i></label>`).join('')}</div><a class="settings-inline-link" href="#/permissions">${t('permissions')} ${icon('arrow',15)}</a></div></details><details class="card settings-section" id="settings-privacy"><summary><span class="settings-section-icon">${icon('shield',19)}</span><span><b>${t('privacy')}</b><small>${S.locale==='vi'?'Dữ liệu cục bộ và cách ứng dụng hoạt động':'Local data and how the app works'}</small></span><span class="settings-chevron">${icon('chevronDown',17)}</span></summary><div class="settings-section-body"><p>${t('localOnly')}</p><p>${t('privacyMap')}</p><p>${S.locale==='vi'?'Không có phân tích từ xa. Không gửi tên, số điện thoại hoặc tọa độ vào log. IndexedDB không được mã hóa tại chỗ bởi ứng dụng.':'No remote analytics. Names, phone numbers and coordinates are not sent to logs. IndexedDB is not encrypted at rest by this app.'}</p><a class="settings-inline-link" href="#/permissions">${t('permissions')} ${icon('arrow',15)}</a></div></details><details class="card settings-section" id="settings-data"><summary><span class="settings-section-icon">${icon('database',19)}</span><span><b>${t('data')}</b><small>${S.locale==='vi'?'Xuất, nhập và xóa dữ liệu trên thiết bị':'Export, import and delete on-device data'}</small></span><span class="settings-chevron">${icon('chevronDown',17)}</span></summary><div class="settings-section-body"><p>${t('backupNotice')}</p><div class="backup-actions">${button(`${icon('download',17)} ${t('export')}`,'export-backup','btn btn-primary')}${button(`${icon('upload',17)} ${t('import')}`,'import-backup','btn btn-secondary')}<input type="file" id="backup-file" accept=".zip,application/zip" hidden></div><div class="storage-status">${S.locale==='vi'?'Lưu trữ trình duyệt':'Browser storage'}: IndexedDB · ${S.locale==='vi'?'trên thiết bị':'on-device'}</div><button class="btn btn-danger-outline btn-wide" data-action="delete-data">${t('deleteData')}</button></div></details></div><div class="support-card card"><h2>${t('support')}</h2>${contactLinks()}<div class="settings-hub-shortcuts settings-support-links"><a href="#/help">${icon('help',18)}<span>${t('help')}</span></a><a href="#/plans">${icon('file',18)}<span>${t('plans')}</span></a></div></div>`;}
 function renderPermissions(){const notif=NotificationAdapter.permission();const loc=S.locationPermission||'unknown';return `<div class="page-intro"><div><span class="eyebrow">DEVICE CAPABILITIES</span><h1>${t('permissions')}</h1><p>${t('permissionHelp')}</p></div></div><section class="card permission-list"><h2>${S.locale==='vi'?'Quyền và khả năng trình duyệt':'Browser permissions and capabilities'}</h2>${[[S.locale==='vi'?'Vị trí khi sử dụng':'Location while in use',loc],[S.locale==='vi'?'Thông báo':'Notifications',notif],[S.locale==='vi'?'Rung / Haptics':'Haptics / vibration',navigator.vibrate?'supported':'unsupported'],['Local storage / IndexedDB','supported'],[t('backgroundLocation'),'native-only'],[S.locale==='vi'?'Geofence nền':'Background geofencing','native-only']].map(([name,state])=>`<div class="permission-row"><div><b>${esc(name)}</b><small>${state==='native-only'?t('nativeOnly'):state==='supported'||state==='granted'?t('granted'):state==='default'?t('notRequested'):state==='denied'?t('denied'):state==='unsupported'?t('unsupported'):state==='prompt'?t('locationPermissionPrompt'):state==='restricted'?t('locationServicesDisabled'):t('unknownState')}</small></div>${badge(state==='granted'||state==='supported'?t('granted'):state==='default'?t('notRequested'):state==='denied'?t('denied'):state==='native-only'?t('nativeOnly'):state==='prompt'?t('locationPermissionPrompt'):state==='restricted'?t('locationServicesDisabled'):t('unknownState'),state==='granted'||state==='supported'?'success':state==='denied'?'danger':state==='restricted'?'warning':'neutral')}</div>`).join('')}<div class="notice-line">${icon('info',17)}<span>${t('foregroundOnly')}</span></div>${notif!=='granted'?`<div class="notice-line warning-line">${icon('alert',17)}<span>${t('notificationDenied')}</span></div>`:''}${button(S.locale==='vi'?'Yêu cầu quyền thông báo':'Request notification permission','request-notifications','btn btn-secondary')}</section>`;}
-function renderModal(){if(!S.modal)return '';const {type,id}=S.modal;let content='';const editingZone=type==='zone-edit'?S.zones.find(z=>z.id===id):null;const mtitle={'zone-edit':S.locale==='vi'?'Sửa vùng an toàn':'Edit Safe Zone',zone:t('createZone'),contact:t('addContact'),task:t('addTask'),habit:t('addHabit'),device:t('addDevice'),maintenance:t('addMaintenance'),accessory:t('addAccessory'),data:t('recordDataHandling'),document:t('addDocument'),sos:t('confirmSos'),delete:t('deleteData'),'import-confirm':S.locale==='vi'?'Xác nhận nhập bản sao lưu':'Confirm backup import',confirm:S.modal?.title||t('confirmSos')}[type]||'SafeKid';
+function renderModal(){if(!S.modal)return '';const {type,id}=S.modal;let content='';const editingZone=type==='zone-edit'?S.zones.find(z=>z.id===id):null;const mtitle={'sfai-history':S.locale==='vi'?'Hội thoại trên thiết bị':'On-device conversations','sfai-rename':S.locale==='vi'?'Đổi tên hội thoại':'Rename conversation','zone-edit':S.locale==='vi'?'Sửa vùng an toàn':'Edit Safe Zone',zone:t('createZone'),contact:t('addContact'),task:t('addTask'),habit:t('addHabit'),device:t('addDevice'),maintenance:t('addMaintenance'),accessory:t('addAccessory'),data:t('recordDataHandling'),document:t('addDocument'),sos:t('confirmSos'),delete:t('deleteData'),'import-confirm':S.locale==='vi'?'Xác nhận nhập bản sao lưu':'Confirm backup import',confirm:S.modal?.title||t('confirmSos')}[type]||'SafeKid';
+ if(type==='sfai-history')content=`<div class="sfai-session-list">${sfaiSessions.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(session=>`<section class="sfai-session-row"><button class="sfai-session-open" data-action="sfai-open:${session.id}" ${session.id===sfaiActiveId?'aria-current="true"':''}><b>${esc(session.title)}</b><small>${fmtDateTime(session.updatedAt)} · ${session.messages.length} ${S.locale==='vi'?'tin nhắn':'messages'}</small></button><button class="text-btn" data-action="sfai-rename:${session.id}">${S.locale==='vi'?'Đổi tên':'Rename'}</button><button class="text-btn" data-action="sfai-delete:${session.id}">${t('delete')}</button></section>`).join('')}</div>`;
+ if(type==='sfai-rename')content=`<form id="sfai-rename-form" class="form-stack"><label>${S.locale==='vi'?'Tên cuộc trò chuyện':'Conversation name'}<input name="title" maxlength="80" required value="${esc(sfaiSessions.find(session=>session.id===id)?.title||'')}"></label><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="modal-close">${t('cancel')}</button><button type="submit" class="btn btn-primary">${t('save')}</button></div></form>`;
  if(type==='sos')content=`<div class="modal-copy danger-copy"><div class="sos-pulse small-pulse">${icon('sos',30)}</div><p>${t('sosDisclaimer')}</p><p>${t('emergencyHelp')}</p></div><div class="modal-actions">${button(t('cancelSos'),'modal-close','btn btn-secondary')}${button(t('confirmSos'),'sos-trigger','btn btn-danger')}</div>`;
  if(type==='delete')content=`<div class="modal-copy"><p>${t('deleteConfirm')}</p><p>${t('backupNotice')}</p></div><div class="modal-actions">${button(t('cancel'),'modal-close','btn btn-secondary')}${button(t('deleteData'),'delete-data-confirm','btn btn-danger')}</div>`;
  if(type==='import-confirm')content=`<div class="modal-copy"><p>${S.locale==='vi'?'Nhập bản sao lưu sẽ thay thế toàn bộ dữ liệu hiện tại trên thiết bị này. Hãy chắc chắn bạn đã xuất bản sao lưu hiện tại nếu cần.':'Importing this backup replaces all current data on this device. Export a backup of current data first if you need it.'}</p></div><div class="modal-actions">${button(t('cancel'),'modal-close','btn btn-secondary')}${button(S.locale==='vi'?'Nhập và thay thế dữ liệu':'Import and replace data','import-backup-confirm','btn btn-danger')}</div>`;
@@ -445,23 +539,30 @@ async function handleSubmit(event){const form=event.target;if(!(form instanceof 
  if(form.id==='accessory-form'){const d=new FormData(form),e={id:uid(),passportDeviceId:d.get('deviceId'),name:String(d.get('name')).trim(),eventDate:d.get('eventDate'),action:d.get('action'),notes:String(d.get('notes')||''),documentIds:[]};await put('accessoryEvents',e);S.accessories.push(e);S.modal=null;render();toast(t('saved'));return;}
  if(form.id==='data-form'){const d=new FormData(form);if(d.get('acknowledge')!=='on')throw new Error(t('wipeDisclaimer'));const e={id:uid(),passportDeviceId:d.get('deviceId'),eventDate:d.get('eventDate'),action:d.get('action'),status:d.get('action')==='data_wipe_planned'?'planned':d.get('action')==='data_wipe_reported'?'reported_performed':'not_started',outcome:String(d.get('outcome')||''),evidenceDocumentIds:[],verification:'user_entered',disclaimerAcknowledged:true,notes:'Record only; no physical device operation was performed by SafeKid.'};await put('dataHandlingEvents',e);S.dataHandling.push(e);S.modal=null;render();toast(t('saved'));return;}
  if(form.id==='document-form'){const d=new FormData(form),f=d.get('file');if(!f||f.size>10*1024*1024)throw new Error('Tệp cần nhỏ hơn 10 MB.');if(!(f.type.startsWith('image/')||f.type==='application/pdf'))throw new Error('Chỉ hỗ trợ hình ảnh hoặc PDF.');const doc={id:uid(),fileName:f.name,mimeType:f.type,sizeBytes:f.size,blob:f,linkedEntityType:'passport_device',linkedEntityId:d.get('deviceId'),addedAt:iso()};await put('documents',doc);S.documents.push(doc);S.modal=null;render();toast(t('saved'));return;}
- if(form.id==='sfai-form'){const d=new FormData(form),question=String(d.get('question')).trim();if(!question)return;const messages=$('#sfai-messages');
- const first=!S.sfaiMessages.length;
- const newMessages=[{role:'user',text:question},answerSfai(question)];
- S.sfaiMessages.push(...newMessages);
- if(first)messages.replaceChildren();
- messages.insertAdjacentHTML('beforeend',newMessages.map(renderChatMessage).join(''));
- messages.lastElementChild.classList.add('chat-message-new');
- form.reset();
- lastPageMarkup=renderPage();
- messages.scrollTo({top:messages.scrollHeight,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return;}
+ if(form.id==='sfai-rename-form'){
+ const session=sfaiSessions.find(item=>item.id===S.modal?.id);
+ const name=String(new FormData(form).get('title')||'').trim();
+ if(session&&name){const updated={...session,title:name};await persistSfaiSession(updated);Object.assign(session,updated);}
+ S.modal=null;render();return;
+ }
+ if(form.id==='sfai-form'){await sendSfaiQuestion(form);return;}
+
  }catch(error){toast(error.message||t('error'),'error');}}
 
 async function handleAction(action){
+ if(action.startsWith('sfai-')){await handleSfaiAction(action);return;}
+
  if(action==='toggle-locale'){S.locale=S.locale==='vi'?'en':'vi';S.faqCategory='all';S.faqSearch='';await savePrefs();render();return;}
  if(action==='go-home'){navigate('/home');return;}if(action==='route-location'){navigate('/location');return;}if(action==='route-zones'){navigate('/safe-zones');return;}
- if(action==='confirm-pending-action'){const pending=S.modal;S.modal=null;if(pending?.confirmAction==='zone-delete-confirm'){const id=pending.entityId;if(S.route==='/safe-zones'){await remove('safeZones',id);S.zones=S.zones.filter(x=>x.id!==id);}}else if(pending?.confirmAction==='contact-delete-confirm'){const id=pending.entityId;await remove('contacts',id);S.contacts=S.contacts.filter(x=>x.id!==id);}else if(pending?.confirmAction==='document-delete-confirm'){const id=pending.entityId;await remove('documents',id);S.documents=S.documents.filter(x=>x.id!==id);}render();return;}if(action==='import-backup-confirm'){const file=S.pendingBackupFile;S.pendingBackupFile=null;S.modal=null;if(file){const date=await restoreBackup(file);await loadState();render();toast(`${S.locale==='vi'?'Đã nhập bản sao lưu':'Backup imported'} · ${fmtDateTime(date)}`);}return;}
- if(action==='zone-search'){await searchZonePlaces();return;}if(action==='zone-use-phone-location'){try{toast(S.locale==='vi'?'Đang lấy vị trí điện thoại phụ huynh…':'Getting parent phone location…','info');const fix=await LocationAdapter.getCurrentPosition({timeout:15000});S.locationPermission='granted';await handleLocationFix(fix);await selectZoneLocation(fix.longitude,fix.latitude,S.locale==='vi'?'Vị trí điện thoại phụ huynh':'Parent phone location',true);}catch(error){S.locationPermission=error.code===1?'denied':error.code==='unsupported'?'unsupported':'restricted';toast(error.message||t('error'),'error');}return;} if(action==='modal-close'||action==='modal-backdrop'){if(S.modal?.type==='import-confirm')S.pendingBackupFile=null;closeModalAndRestoreFocus();return;}if(action==='modal-zone'){if(S.route!=='/safe-zones'){toast(S.locale==='vi'?'Hãy mở mục Vùng an toàn để tạo Safe Zone.':'Open the Safe Zones section to create a zone.','info');navigate('/safe-zones');return;}S.zoneDraft={radiusMeters:GEOFENCE_DEFAULTS.defaultRadiusMeters,longitude:null,latitude:null,placeLabel:''};S.zoneSearchResults=[];S.modal={type:'zone'};render();return;}if(action==='modal-contact'){S.modal={type:'contact'};render();return;}if(action==='modal-habit'){S.modal={type:'habit'};render();return;}if(action==='modal-task'){S.modal={type:'task'};render();return;}if(action==='modal-device'){S.modal={type:'device'};render();return;}if(action==='sos-confirm'){if(openSosEvent(S.sosEvents)){navigate('/sos');toast(S.locale==='vi'?'Đang có SOS chưa xử lý.':'An SOS event is already open.','error');return;}S.modal={type:'sos'};render();return;}if(action==='sos-trigger'){if(openSosEvent(S.sosEvents)){S.modal=null;render();navigate('/sos');return;}await triggerSOS();return;}if(action==='get-location'){await getLocation();return;}if(action==='toggle-watch'){startWatch();return;}if(action==='export-backup'){const blob=await createBackup();FilesAdapter.download(blob,`safekid-backup-${today()}.zip`);toast(t('saved'));return;}if(action==='import-backup'){$('#backup-file')?.click();return;}if(action==='delete-data'){S.modal={type:'delete'};render();return;}if(action==='delete-data-confirm'){AudioAdapter.stopSosAlarm();await deleteAllLocalData();S.profile=null;S.children=[];S.contacts=[];S.fix=null;S.zones=[];S.zoneEvents=[];S.alerts=[];S.sosEvents=[];S.habits=[];S.tasks=[];S.occurrences=[];S.coins=[];S.devices=[];S.maintenance=[];S.accessories=[];S.dataHandling=[];S.documents=[];S.modal=null;await setMeta('onboarded',false);S.route='/onboarding';location.hash='/onboarding';render();return;}if(action==='request-notifications'){const result=await NotificationAdapter.requestPermission();toast(`Notification: ${result}`,result==='granted'?'success':'error');render();return;}
+ if(action==='confirm-pending-action'){const pending=S.modal;S.modal=null;if(pending?.confirmAction==='sfai-delete-confirm'){
+ const id=pending.entityId;cancelSfaiRequest(id);await remove('meta','sfai-session:'+id);
+ sfaiSessions=sfaiSessions.filter(session=>session.id!==id);
+ if(sfaiActiveId===id){
+  if(sfaiSessions.length){sfaiActiveId=sfaiSessions[0].id;S.sfaiMessages=sfaiSessions[0].messages;await put('meta',{key:'sfai-active',value:sfaiActiveId});}
+  else await newSfaiSession();
+ }
+ }else if(pending?.confirmAction==='zone-delete-confirm'){const id=pending.entityId;if(S.route==='/safe-zones'){await remove('safeZones',id);S.zones=S.zones.filter(x=>x.id!==id);}}else if(pending?.confirmAction==='contact-delete-confirm'){const id=pending.entityId;await remove('contacts',id);S.contacts=S.contacts.filter(x=>x.id!==id);}else if(pending?.confirmAction==='document-delete-confirm'){const id=pending.entityId;await remove('documents',id);S.documents=S.documents.filter(x=>x.id!==id);}render();return;}if(action==='import-backup-confirm'){const file=S.pendingBackupFile;S.pendingBackupFile=null;S.modal=null;if(file){for(const id of sfaiRequests.keys())cancelSfaiRequest(id);const date=await restoreBackup(file);await loadState();await loadSfaiSessions();render();toast(`${S.locale==='vi'?'Đã nhập bản sao lưu':'Backup imported'} · ${fmtDateTime(date)}`);}return;}
+ if(action==='zone-search'){await searchZonePlaces();return;}if(action==='zone-use-phone-location'){try{toast(S.locale==='vi'?'Đang lấy vị trí điện thoại phụ huynh…':'Getting parent phone location…','info');const fix=await LocationAdapter.getCurrentPosition({timeout:15000});S.locationPermission='granted';await handleLocationFix(fix);await selectZoneLocation(fix.longitude,fix.latitude,S.locale==='vi'?'Vị trí điện thoại phụ huynh':'Parent phone location',true);}catch(error){S.locationPermission=error.code===1?'denied':error.code==='unsupported'?'unsupported':'restricted';toast(error.message||t('error'),'error');}return;} if(action==='modal-close'||action==='modal-backdrop'){if(S.modal?.type==='import-confirm')S.pendingBackupFile=null;closeModalAndRestoreFocus();return;}if(action==='modal-zone'){if(S.route!=='/safe-zones'){toast(S.locale==='vi'?'Hãy mở mục Vùng an toàn để tạo Safe Zone.':'Open the Safe Zones section to create a zone.','info');navigate('/safe-zones');return;}S.zoneDraft={radiusMeters:GEOFENCE_DEFAULTS.defaultRadiusMeters,longitude:null,latitude:null,placeLabel:''};S.zoneSearchResults=[];S.modal={type:'zone'};render();return;}if(action==='modal-contact'){S.modal={type:'contact'};render();return;}if(action==='modal-habit'){S.modal={type:'habit'};render();return;}if(action==='modal-task'){S.modal={type:'task'};render();return;}if(action==='modal-device'){S.modal={type:'device'};render();return;}if(action==='sos-confirm'){if(openSosEvent(S.sosEvents)){navigate('/sos');toast(S.locale==='vi'?'Đang có SOS chưa xử lý.':'An SOS event is already open.','error');return;}S.modal={type:'sos'};render();return;}if(action==='sos-trigger'){if(openSosEvent(S.sosEvents)){S.modal=null;render();navigate('/sos');return;}await triggerSOS();return;}if(action==='get-location'){await getLocation();return;}if(action==='toggle-watch'){startWatch();return;}if(action==='export-backup'){const blob=await createBackup();FilesAdapter.download(blob,`safekid-backup-${today()}.zip`);toast(t('saved'));return;}if(action==='import-backup'){$('#backup-file')?.click();return;}if(action==='delete-data'){S.modal={type:'delete'};render();return;}if(action==='delete-data-confirm'){AudioAdapter.stopSosAlarm();for(const id of sfaiRequests.keys())cancelSfaiRequest(id);await deleteAllLocalData();sfaiSessions=[];sfaiActiveId=null;S.sfaiMessages=[];S.profile=null;S.children=[];S.contacts=[];S.fix=null;S.zones=[];S.zoneEvents=[];S.alerts=[];S.sosEvents=[];S.habits=[];S.tasks=[];S.occurrences=[];S.coins=[];S.devices=[];S.maintenance=[];S.accessories=[];S.dataHandling=[];S.documents=[];S.modal=null;await setMeta('onboarded',false);S.route='/onboarding';location.hash='/onboarding';render();return;}if(action==='request-notifications'){const result=await NotificationAdapter.requestPermission();toast(`Notification: ${result}`,result==='granted'?'success':'error');render();return;}
  if(action.startsWith('zone-edit:')){if(S.route!=='/safe-zones')return;const id=action.split(':')[1],zone=S.zones.find(z=>z.id===id);if(!zone)return;S.zoneDraft={longitude:zone.centerLongitude,latitude:zone.centerLatitude,radiusMeters:zone.radiusMeters,placeLabel:zone.placeLabel||zone.address||zone.name};S.zoneSearchResults=[];S.modal={type:'zone-edit',id};render();return;}
  if(action.startsWith('zone-toggle:')){if(S.route!=='/safe-zones')return;const id=action.split(':')[1],z=S.zones.find(x=>x.id===id);if(z){z.enabled=!z.enabled;z.updatedAt=iso();await put('safeZones',z);render();}return;}
  if(action.startsWith('zone-delete:')){if(S.route!=='/safe-zones')return;const id=action.split(':')[1];S.modal={type:'confirm',title:S.locale==='vi'?'Xóa vùng an toàn?':'Delete Safe Zone?',message:S.locale==='vi'?'Vùng này sẽ bị xóa khỏi thiết bị. Thao tác không thể hoàn tác.':'This zone will be removed from this device and cannot be undone.',confirmLabel:t('delete'),confirmAction:'zone-delete-confirm',entityId:id};render();return;}
@@ -525,7 +626,7 @@ function syncMobileKeyboardState(){
 function installMobileKeyboardStateListeners(){
  if(mobileKeyboardListenersInstalled)return;
  document.addEventListener('pointerdown',event=>{
-  if(event.target.closest('.modal-actions'))modalPointerActive=true;
+  if(event.target.closest('.modal-actions,.chat-form button,.sfai-thinking button'))modalPointerActive=true;
  },{passive:true});
  for(const event of ['pointerup','pointercancel']){
   document.addEventListener(event,()=>{
@@ -642,7 +743,7 @@ async function checkReminders(){const now=new Date(),day=today(),hhmm=now.toTime
 function startForegroundReminderLoop(){if(reminderTimer)clearInterval(reminderTimer);reminderTimer=setInterval(()=>{if(document.visibilityState==='visible')checkReminders().catch(()=>{});},30000);}
 
 async function boot(){try{S.content=await loadApprovedContent();}catch{S.content={vi:{faq:[],brand:[]},en:{faq:[],brand:[]}};}
- try{await loadState();}catch(error){$('#app').innerHTML=`<div class="boot-error"><h1>SafeKid</h1><p>${esc(error.message)}</p><p>IndexedDB is required for local storage.</p></div>`;return;}
+ try{await loadState();await loadSfaiSessions();}catch(error){$('#app').innerHTML=`<div class="boot-error"><h1>SafeKid</h1><p>${esc(error.message)}</p><p>IndexedDB is required for local storage.</p></div>`;return;}
  const onboarded=await getOne('meta','onboarded');const hasProfile=Boolean(S.profile);S.route=hasProfile?(currentPath()==='/'||currentPath()==='/onboarding'?'/home':currentPath()):'/onboarding';if(!hasProfile)location.hash='/onboarding';else if(!location.hash||location.hash==='#/onboarding')location.hash='/home';
  S.locationPermission=await LocationAdapter.permissionState();render();wireEvents();startForegroundReminderLoop();
  try{await persistStorageRequest();}catch{}

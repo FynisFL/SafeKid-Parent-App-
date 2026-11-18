@@ -13,7 +13,7 @@ test('FAQ and S.F AI have separate routes and renderers',()=>{
   assert.match(source,/if\(p==='\/help'\)return renderHelp\(\);if\(p==='\/sfai'\)return renderSfai\(\);/);
   assert.match(source,/function renderHelp\(\)/);
   assert.match(source,/function renderSfai\(\)/);
-  const faq=source.slice(source.indexOf('function renderHelp()'),source.indexOf('function renderSfai()'));
+  const faq=source.slice(source.indexOf('function renderHelp()'),source.indexOf('function renderChatMessage'));
   assert.doesNotMatch(faq,/sfai-form|sfai-messages/);
   assert.match(faq,/faq-items/);
   assert.match(faq,/normalizeFaqSearch/);
@@ -31,7 +31,7 @@ test('More hub exposes FAQ and S.F AI as independent destinations',()=>{
 
 test('S.F AI provides suggested prompts and truthful local-only support disclosure',()=>{
   const sfai=source.slice(source.indexOf('function renderSfai()'),source.indexOf('function answerSfai('));
-  assert.match(sfai,/data-sfai-prompt/);
+  assert.match(source.slice(source.indexOf('function renderSfaiConversation'),source.indexOf('function refreshSfaiConversation')),/data-sfai-prompt/);
   assert.match(sfai,/không phải nhân viên trực tuyến/);
   assert.match(sfai,/không được gửi tới đội ngũ SafeKid/);
 });
@@ -76,7 +76,7 @@ test('Mobile text-entry focus hides the bottom navigation and restores it after 
   assert.match(refinements,/\.app-shell\.keyboard-open \.modal\{max-height:calc\(100dvh - 12px\);\}/);
 });
 test('Service worker invalidates the previous shell cache and precaches the mobile refinement stylesheet',()=>{
-  assert.match(serviceWorker,/safekid-pwa-v7-mobile-shell-r10/);
+  assert.match(serviceWorker,/safekid-pwa-v7-mobile-shell-r11/);
   assert.match(serviceWorker,/\.\/src\/mobile-refinements\.css/);
 });
 
