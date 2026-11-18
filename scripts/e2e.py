@@ -189,6 +189,12 @@ try:
     assert page.locator('#sfai-form').count() == 1
     assert page.locator('.sfai-disclosure').is_visible(), 'S.F AI limitation disclosure must be visible above the conversation'
     assert 'không phải nhân viên trực tuyến' in page.locator('.sfai-disclosure').get_attribute('aria-label')
+    page.locator('[data-action="sfai-info"]').click()
+    page.locator('.modal-copy').filter(has_text='S.F AI tra cứu').wait_for()
+    page.locator('.modal-head [data-action="modal-close"]').click()
+    page.locator('.modal-backdrop').wait_for(state='detached')
+    chat_regions = page.locator('.route-stage').evaluate("el => ['.sfai-toolbar','.sfai-disclosure','.sfai-workspace'].map(s=>{const r=el.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom};})")
+    assert chat_regions[0]['bottom'] <= chat_regions[1]['top']+1 and chat_regions[1]['bottom'] <= chat_regions[2]['top']+1, f'Chat toolbar, disclosure and conversation must not overlap: {chat_regions}'
     prompt = page.locator('[data-sfai-prompt]').first
     page.evaluate('window.qaKeyboardEnabled = true')
     prompt.click()
