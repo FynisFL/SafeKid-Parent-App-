@@ -12,6 +12,9 @@ import { validateSafeZoneDraft } from './domain/safe-zone.js';
 const $ = (s,root=document)=>root.querySelector(s);
 const $$ = (s,root=document)=>[...root.querySelectorAll(s)];
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function approvedText(value){
+ return esc(value).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+}
 const uid=()=>crypto.randomUUID();
 const iso=()=>new Date().toISOString();
 const fmtDate=(v,locale=S.locale,opts={year:'numeric',month:'short',day:'numeric'})=>v?new Intl.DateTimeFormat(locale==='vi'?'vi-VN':'en-US',opts).format(new Date(v)): '—';
@@ -111,7 +114,7 @@ function titleFor(path){const p=path.split('/')[1];const map={home:'navHome',loc
 function badge(text,type='neutral'){return `<span class="badge ${type}">${esc(text)}</span>`;}
 function card(title,content,opts=''){return `<section class="card ${opts}"><div class="card-heading">${title}</div>${content}</section>`;}
 function button(label,action,cls='btn',attrs=''){return `<button class="${cls}" data-action="${action}" ${attrs}>${label}</button>`;}
-function navItem(route,key,iconName){const active=S.route===route||S.route.startsWith(route+'/');return `<a class="nav-item ${active?'active':''}" href="#${route}" ${active?'aria-current="page"':''} data-route="${route}"><span class="nav-icon">${icon(iconName,19)}</span><span>${t(key)}</span></a>`;}
+function navItem(route,key,iconName){const active=S.route===route||S.route.startsWith(route+'/');return `<a aria-label="${esc(t(key))}" title="${esc(t(key))}" class="nav-item ${active?'active':''}" href="#${route}" ${active?'aria-current="page"':''} data-route="${route}"><span class="nav-icon">${icon(iconName,19)}</span><span>${t(key)}</span></a>`;}
 function renderShell(content){
  const primaryRoutes=['/home','/location','/sos','/growth'];const isMoreActive=S.route==='/more'||!primaryRoutes.some(r=>S.route===r||S.route.startsWith(r+'/'));const mobile=[['/home','navHome','home'],['/location','navLocation','pin'],['/sos','navSos','sos'],['/growth','navGrowth','growth'],['/more','moreHub','grid']];
  const unread=S.alerts.filter(x=>!x.readAt).length;
@@ -387,9 +390,9 @@ function renderFaqItems(items,q='',category='all'){
  const query=normalizeFaqSearch(q);
  const filtered=items.filter(x=>(category==='all'||x.category===category)&&normalizeFaqSearch(x.question+' '+x.answer).includes(query));
  if(!filtered.length)return `<div class="faq-empty card"><span>${icon('search',24)}</span><b>${S.locale==='vi'?'Không tìm thấy câu hỏi phù hợp':'No matching questions'}</b><p>${S.locale==='vi'?'Thử từ khóa ngắn hơn hoặc mở S.F AI để được hướng dẫn.':'Try a shorter keyword or open S.F AI for guidance.'}</p><a href="#/sfai" class="text-link">S.F AI ${icon('arrow',14)}</a></div>`;
- return filtered.map((x,i)=>`<details class="faq-item"><summary><span class="faq-index">${String(i+1).padStart(2,'0')}</span><span>${esc(x.question)}</span><span class="faq-chevron">${icon('chevronDown',17)}</span></summary><div class="faq-answer"><p>${esc(x.answer).replace(/\n/g,'<br>')}</p></div></details>`).join('');
+ return filtered.map((x,i)=>`<details class="faq-item"><summary><span class="faq-index">${String(i+1).padStart(2,'0')}</span><span>${esc(x.question)}</span><span class="faq-chevron">${icon('chevronDown',17)}</span></summary><div class="faq-answer"><p>${approvedText(x.answer)}</p></div></details>`).join('');
 }
-function renderChatMessage(m){return `<div class="chat-message ${m.role}">${esc(m.text).replace(/\n/g,'<br>')}${m.source?`<small>${S.locale==='vi'?'Nguồn':'Source'}: ${esc(m.source)}</small>`:''}${m.kind==='emergency'?`<a href="#/sos" class="btn btn-danger btn-small">${t('openSos')}</a>`:''}${m.kind==='scope'?`<div class="handoff-label">${S.locale==='vi'?'Liên hệ nhân viên hỗ trợ · Chưa có yêu cầu nào được gửi.':'Contact support · No request has been sent.'}</div><div class="support-links">${contactLinks()}</div>`:''}${m.kind==='navigation'?`<div class="sfai-route-actions">${(m.actions||[]).filter(action=>['/home','/location','/safe-zones','/sos','/growth','/growth/calendar','/alerts','/contacts','/profile','/watch-passport'].includes(action.route)).map(action=>`<a class="btn btn-primary" href="#${action.route}">${esc(action.label)} ${icon('arrow',16)}</a>`).join('')}</div>`:''}</div>`;}
+function renderChatMessage(m){return `<div class="chat-message ${m.role}">${m.role==='assistant'?approvedText(m.text):esc(m.text).replace(/\n/g,'<br>')}${m.source?`<small>${S.locale==='vi'?'Nguồn':'Source'}: ${esc(m.source)}</small>`:''}${m.kind==='emergency'?`<a href="#/sos" class="btn btn-danger btn-small">${t('openSos')}</a>`:''}${m.kind==='scope'?`<div class="handoff-label">${S.locale==='vi'?'Liên hệ nhân viên hỗ trợ · Chưa có yêu cầu nào được gửi.':'Contact support · No request has been sent.'}</div><div class="support-links">${contactLinks()}</div>`:''}${m.kind==='navigation'?`<div class="sfai-route-actions">${(m.actions||[]).filter(action=>['/home','/location','/safe-zones','/sos','/growth','/growth/calendar','/alerts','/contacts','/profile','/watch-passport'].includes(action.route)).map(action=>`<a class="btn btn-primary" href="#${action.route}">${esc(action.label)} ${icon('arrow',16)}</a>`).join('')}</div>`:''}</div>`;}
 let sfaiSessions=[];
 let sfaiActiveId=null;
 const sfaiRequests=new Map();
@@ -495,8 +498,7 @@ async function handleSfaiAction(action){
 }
 function renderSfai(){
  const vi=S.locale==='vi';
- return `<div class="page-intro"><div><h1>S.F AI</h1></div></div>
- <div class="sfai-toolbar"><h1>S.F AI</h1><a class="sfai-compact-help text-link" href="#/help">${icon('book',16)} FAQ</a><button class="icon-btn" data-action="sfai-new" aria-label="${vi?'Cuộc trò chuyện mới':'New conversation'}">${icon('plus',20)}</button><button class="icon-btn" data-action="sfai-history" aria-label="${vi?'Lịch sử hội thoại':'Conversation history'}">${icon('clock',20)}</button></div>
+ return `<div class="sfai-toolbar"><h1>S.F AI</h1><a class="sfai-compact-help text-link" href="#/help">${icon('book',16)} FAQ</a><button class="icon-btn" data-action="sfai-new" aria-label="${vi?'Cuộc trò chuyện mới':'New conversation'}">${icon('plus',20)}</button><button class="icon-btn" data-action="sfai-history" aria-label="${vi?'Lịch sử hội thoại':'Conversation history'}">${icon('clock',20)}</button></div>
  <p class="sfai-disclosure" role="note" aria-label="${vi?'Trợ lý trên thiết bị, không phải nhân viên trực tuyến. Tin nhắn không được gửi tới đội ngũ SafeKid.':'On-device assistant, not a live human agent. Messages are not sent to the SafeKid team.'}"><span>${icon('shield',13)} ${vi?'Hội thoại lưu trên máy':'Conversations stay on this device'}</span><button type="button" class="text-btn" data-action="sfai-info">${vi?'Tìm hiểu thêm':'About S.F AI'}</button></p>
  <section class="sfai-workspace"><div class="sfai-session-title">${esc(currentSfaiSession()?.title||'S.F AI')}</div>
  <div class="sfai-messages" id="sfai-messages" role="log" aria-live="polite" aria-relevant="additions">${renderSfaiConversation()}</div>

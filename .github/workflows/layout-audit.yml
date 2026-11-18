@@ -1,0 +1,27 @@
+name: SafeKid layout audit
+on:
+  push:
+    branches: [qa/layout-repair-r18]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright && python -m playwright install --with-deps chromium
+      - run: |
+          node server.mjs > /tmp/server.log 2>&1 &
+          sleep 2
+          python scripts/layout-audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safekid-layout-audit
+          path: screenshots/
