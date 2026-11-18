@@ -171,15 +171,42 @@ try:
     page.locator('.mobile-nav a[href="#/sos"]').click()
     page.locator('[data-action="sos-confirm"]').click()
     page.locator('[data-action="sos-trigger"]').click()
-    page.get_by_text('Đang có một sự kiện SOS chưa xử lý', exact=False).wait_for(timeout=4000)
+    page.get_by_role('heading', name='CẢNH BÁO SOS', exact=True).wait_for(timeout=4000)
     assert page.locator('[data-action="sos-confirm"]').count() == 0
-    page.locator('[data-action^="sos-ack:"]').first.click()
+    page.locator('.sos-emergency [data-action^="sos-ack:"]').click()
     page.get_by_text('Bạn đã xác nhận SOS', exact=False).wait_for(timeout=3000)
     assert page.locator('[data-action="sos-confirm"]').count() == 0, 'Acknowledged SOS must remain open'
     page.locator('[data-action^="sos-resolve:"]').first.click()
     page.locator('[data-action="sos-confirm"]').wait_for(state='visible',timeout=3000)
     assert page.locator('[data-action="sos-confirm"]').count() == 1, 'Resolving SOS should return to idle activation state'
     results.append('SOS two-step activation, duplicate guard, acknowledge and resolve')
+
+    page.locator('.sos-sound-settings summary').click()
+    page.locator('#sos-audio-form select').select_option('urgent')
+    page.locator('#sos-audio-form button[type="submit"]').click()
+    page.reload()
+    page.locator('.sos-sound-settings summary').click()
+    assert page.locator('#sos-audio-form select').get_attribute('name') == 'tone'
+    assert page.locator('#sos-audio-form select').evaluate('el=>el.value') == 'urgent'
+    import wave, math, struct, tempfile
+    with tempfile.TemporaryDirectory() as audio_directory:
+      audio_path = Path(audio_directory) / 'qa-alarm.wav'
+      with wave.open(str(audio_path), 'wb') as audio_file:
+        audio_file.setnchannels(1)
+        audio_file.setsampwidth(2)
+        audio_file.setframerate(8000)
+        audio_file.writeframes(b''.join(struct.pack('<h', int(6000 * math.sin(2 * math.pi * 440 * i / 8000))) for i in range(8000)))
+      page.locator('#sos-audio-form input[name="audio"]').set_input_files(str(audio_path))
+      page.locator('#sos-audio-form select').select_option('custom')
+      page.locator('#sos-audio-form button[type="submit"]').click()
+      page.locator('#sos-audio-form option[value="custom"][selected]').wait_for(state='attached')
+      page.locator('.sos-sound-settings summary').click()
+      page.get_by_text('qa-alarm.wav', exact=True).wait_for()
+      page.reload()
+      page.locator('.sos-sound-settings summary').click()
+      assert page.locator('#sos-audio-form select').evaluate('el=>el.value') == 'custom'
+      assert page.get_by_text('qa-alarm.wav', exact=True).count() == 1
+    results.append('SOS tone and custom audio file persist on the device')
 
     # Dedicated support destinations and discoverability.
     page.locator('.mobile-nav a[href="#/home"]').click()
@@ -214,6 +241,15 @@ try:
     page.wait_for_function("!document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
     assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must return after text focus ends'
     results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer; keyboard shell hides/restores nav')
+    page.locator('#sfai-form input[name="question"]').fill('Xin chào bro')
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    page.locator('.chat-message.assistant').filter(has_text='Chào bạn!').wait_for()
+    page.locator('#sfai-form input[name="question"]').fill('Mở vùng an toàn')
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    page.locator('.sfai-route-actions a[href="#/safe-zones"]').wait_for()
+    page.locator('#sfai-form input[name="question"]').fill('Viết bài về vũ trụ')
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    page.locator('.handoff-label').filter(has_text='Chưa có yêu cầu nào được gửi').wait_for()
     saved_text = page.locator('.chat-message.user').first.inner_text()
     page.reload()
     page.locator('.chat-message.user').first.wait_for()
@@ -363,7 +399,7 @@ try:
         assert metrics['nav'] and metrics['nav']['bottom'] <= height, f'nav outside viewport {route} at {width}px: {metrics}'
         if route == '#/sfai':
           composer = page.locator('#sfai-form').evaluate("el => {const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};}")
-          nav_top = page.locator('.mobile-nav').evaluate("el => el.getBoundingClientRect().top")
+          nav_top = page.locator('.mobile-nav').evaluate("el => Math.min(el.getBoundingClientRect().top,el.querySelector('.mobile-sos-link .dock-icon').getBoundingClientRect().top)")
           assert composer['height'] >= 48 and composer['bottom'] <= nav_top + 1 and composer['bottom'] <= height, f'S.F AI composer must remain visible above bottom navigation at {width}px: composer={composer}, navTop={nav_top}, viewport={height}'
         assert len(metrics['links']) == 5 and all(x['height'] >= 44 and x['label'] for x in metrics['links']), f'five labelled touch targets required: {metrics}'
         assert sum(1 for x in metrics['links'] if x['active'] == 'page') == 1, f'exactly one active route must be announced: {metrics}'

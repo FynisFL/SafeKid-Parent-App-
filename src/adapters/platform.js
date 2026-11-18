@@ -55,10 +55,10 @@ function playSosBellBurst(ctx){
     fundamental.type='sine';fundamental.frequency.setValueAtTime(note.frequency,at);
     overtone.type='sine';overtone.frequency.setValueAtTime(note.frequency*2.01,at);
     fundamentalGain.gain.setValueAtTime(.0001,at);
-    fundamentalGain.gain.exponentialRampToValueAtTime(.16,at+.018);
+    fundamentalGain.gain.exponentialRampToValueAtTime(Math.max(.02,sosVolume*.25),at+.018);
     fundamentalGain.gain.exponentialRampToValueAtTime(.0001,at+.62);
     overtoneGain.gain.setValueAtTime(.0001,at);
-    overtoneGain.gain.exponentialRampToValueAtTime(.045,at+.014);
+    overtoneGain.gain.exponentialRampToValueAtTime(Math.max(.005,sosVolume*.07),at+.014);
     overtoneGain.gain.exponentialRampToValueAtTime(.0001,at+.34);
     fundamental.connect(fundamentalGain);fundamentalGain.connect(ctx.destination);
     overtone.connect(overtoneGain);overtoneGain.connect(ctx.destination);
@@ -72,7 +72,44 @@ function playSosBellBurst(ctx){
   }
   return true;
 }
+let sosTone='bell',sosVolume=.65,customAlarmBuffer=null;
+function playSelectedSosBurst(ctx){
+ if(sosTone==='bell')return playSosBellBurst(ctx);
+ if(!ctx||ctx.state!=='running')return false;
+ const gain=ctx.createGain();gain.gain.setValueAtTime(Math.max(.02,sosVolume*.32),ctx.currentTime);
+ let source;
+ if(sosTone==='custom'&&customAlarmBuffer){source=ctx.createBufferSource();source.buffer=customAlarmBuffer;}
+ else{
+  source=ctx.createOscillator();source.type=sosTone==='urgent'?'square':'triangle';
+  const start=ctx.currentTime;
+  if(sosTone==='urgent'){
+   for(let i=0;i<6;i++)source.frequency.setValueAtTime(i%2?1100:740,start+i*.24);
+  }else{
+   source.frequency.setValueAtTime(620,start);
+   source.frequency.exponentialRampToValueAtTime(1240,start+.55);
+   source.frequency.exponentialRampToValueAtTime(620,start+1.1);
+   source.frequency.exponentialRampToValueAtTime(1240,start+1.65);
+  }
+ }
+ source.connect(gain);gain.connect(ctx.destination);
+ sosAudioNodes.add(source);sosAudioNodes.add(gain);
+ source.onended=()=>{for(const node of [source,gain]){sosAudioNodes.delete(node);try{node.disconnect();}catch{}}};
+ source.start(ctx.currentTime);source.stop(ctx.currentTime+(sosTone==='custom'&&customAlarmBuffer?customAlarmBuffer.duration:1.8));
+ return true;
+}
 export const AudioAdapter = {
+ clearCustomAlarm(){customAlarmBuffer=null;},
+ configureAlarm({tone='siren',volume=.65}={}){
+  sosTone=['siren','urgent','bell','custom'].includes(tone)?tone:'siren';
+  sosVolume=Math.max(.15,Math.min(.85,Number(volume)||.65));
+ },
+ async loadCustomAlarm(blob){
+  const ctx=getSosAudioContext();if(!ctx?.decodeAudioData)throw new Error('Trình duyệt không hỗ trợ giải mã âm thanh.');
+  const buffer=await ctx.decodeAudioData(await blob.arrayBuffer());
+  if(buffer.duration<.3||buffer.duration>15)throw new Error('Âm thanh phải dài từ 0,3 đến 15 giây.');
+  customAlarmBuffer=buffer;return true;
+ },
+
   // Call directly from pointerdown/click so mobile browsers unlock audio during user activation.
   async prepare(){
     try{
@@ -86,11 +123,11 @@ export const AudioAdapter = {
     const ready=await this.prepare();if(!ready)return false;
     const ctx=getSosAudioContext();if(!ctx)return false;
     sosAlarmPlaying=true;
-    playSosBellBurst(ctx);
+    playSelectedSosBurst(ctx);
     sosAlarmTimer=setInterval(()=>{
       if(!sosAlarmPlaying||ctx.state!=='running')return;
-      playSosBellBurst(ctx);
-    },2100);
+      playSelectedSosBurst(ctx);
+    },sosTone==='custom'&&customAlarmBuffer?customAlarmBuffer.duration*1000+250:2100);
     return true;
   },
   stopSosAlarm(){

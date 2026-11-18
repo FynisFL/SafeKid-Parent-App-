@@ -59,3 +59,16 @@ test('SOS audio adapter safely falls back when Web Audio is not supported',async
     if(originalWindow===undefined)delete globalThis.window;else globalThis.window=originalWindow;
   }
 });
+
+test('siren alarm sweeps frequency and stops through the same lifecycle',async()=>{
+ const originalWindow=globalThis.window;globalThis.window={AudioContext:FakeAudioContext};
+ try{
+  AudioAdapter.configureAlarm({tone:'siren',volume:.65});
+  assert.equal(await AudioAdapter.startSosAlarm(),true);
+  const oscillator=currentFakeContext.oscillators.at(-1);
+  assert.equal(oscillator.type,'triangle');
+  assert.ok(oscillator.frequency.values.some(value=>value.ramp));
+  AudioAdapter.stopSosAlarm();
+  assert.equal(AudioAdapter.isSosAlarmPlaying(),false);
+ }finally{AudioAdapter.stopSosAlarm();AudioAdapter.configureAlarm({tone:'bell'});globalThis.window=originalWindow;}
+});

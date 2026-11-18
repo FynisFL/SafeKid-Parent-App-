@@ -7,7 +7,6 @@ import { DEFAULT_MAP_STYLE_URL } from '../src/config/map.js';
 const css=fs.readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
 const app=fs.readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
 const adapter=fs.readFileSync(new URL('../src/adapters/platform.js',import.meta.url),'utf8');
-const env=fs.existsSync(new URL('../.env',import.meta.url))?fs.readFileSync(new URL('../.env',import.meta.url),'utf8'):'';
 const envExample=fs.readFileSync(new URL('../.env.example',import.meta.url),'utf8');
 const sw=fs.readFileSync(new URL('../sw.js',import.meta.url),'utf8');
 const mapConfig=fs.readFileSync(new URL('../src/config/map.js',import.meta.url),'utf8');
@@ -39,7 +38,6 @@ test('SOS route and activation control do not inherit entrance, pulse or hover m
 });
 
 test('MapTiler uses the supplied pastel vector style JSON through MapLibre, not an iframe or raster tile URL',()=>{
-  assert.ok(!env || /^VITE_MAP_STYLE_URL=/m.test(env),'optional .env may be absent from a clean source handoff');
   assert.match(envExample,/YOUR_MAPTILER_KEY/);
   assert.match(app,/maplibre-gl@5\.24\.0\/dist\/maplibre-gl\.js/);
   assert.doesNotMatch(app,/<iframe|\/\{z\}\/\{x\}\/\{y\}\.png/);
@@ -74,7 +72,7 @@ test('watch updates the map marker and live accuracy without recreating the map 
 });
 
 test('PWA cache version is incremented after map and responsive UI changes',()=>{
-  assert.match(sw,/safekid-pwa-v7-mobile-shell-r15/);
+  assert.match(sw,/safekid-pwa-v7-mobile-shell-r16/);
   assert.match(sw,/src\/config\/map\.js/);
 });
 
