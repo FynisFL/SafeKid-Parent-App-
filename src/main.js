@@ -120,6 +120,19 @@ function render(){
  const pageMarkup=renderPage();
  const next=document.createElement('template');
  next.innerHTML=renderShell(pageMarkup);
+ const incomingPage=next.content.querySelector('.route-stage');
+ incomingPage.dataset.page=S.route.split('/')[1];
+ const intro=incomingPage.querySelector(':scope > .page-intro');
+ const friendlyPages=['more','help','plans','profile','settings','watch-passport','contacts','alerts'];
+ if(intro&&friendlyPages.includes(incomingPage.dataset.page)){
+  intro.classList.add('illustrated-intro');
+  const art=document.createElement('img');
+  art.className='page-companion';
+  art.src='./assets/illustrations/'+(incomingPage.dataset.page==='plans'?'mascot-cheer.webp':'mascot-wave.webp');
+  art.alt='';art.width=96;art.height=96;art.decoding='async';
+  intro.append(art);
+ }
+
  const modal=next.content.querySelector('.modal-backdrop');
  const modalMarkup=modal?.outerHTML||'';
  const actions=modal?.querySelector('.modal-actions');
@@ -504,7 +517,7 @@ function syncMobileKeyboardState(){
  if(chat&&stage){
   const header=$('.topbar',shell);
   const top=Math.max(0,header.getBoundingClientRect().bottom-(viewport?.offsetTop||0));
-  const navHeight=shell.classList.contains('keyboard-open')?0:$('.mobile-nav',shell).getBoundingClientRect().height;
+  const navHeight=shell.classList.contains('keyboard-open')?0:Math.max(0,window.innerHeight-$('.mobile-nav',shell).getBoundingClientRect().top);
   shell.style.setProperty('--chat-height',`${Math.max(160,(viewport?.height||window.innerHeight)-top-navHeight)}px`);
  }
  syncNavIndicator();
