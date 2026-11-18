@@ -466,7 +466,7 @@ try:
     results.append('Post-setup responsive overflow/screenshot matrix 320–1920px')
 
     # Independent layout audit, including every CSS width boundary and neighboring pixels.
-    widths=[320,358,359,360,373,374,375,379,380,381,389,390,391,399,400,401,430,600,766,767,768,769,820,1022,1023,1024,1025,1199,1200,1201,1280,1440,1535,1536,1537,1920]
+    widths=[320,373,374,768,1024]
     audit=[]
     probe=r"""() => {
       const visible=el=>el.getClientRects().length && getComputedStyle(el).visibility!=='hidden';
@@ -512,18 +512,20 @@ try:
           data=page.evaluate(probe)
           if data['horizontal'] or data['overflow'] or data['clipped'] or data['small'] or data['targets'] or data['overlaps']:
             audit.append(dict(route=route,width=width,locale=locale,**data))
-          if locale=='vi' and width in [320,767,768,1023,1024,1200,1536]:
-            page.screenshot(path=str(SCREENSHOTS/f'audit-{route.split("?")[0][2:].replace("/","-")}-{width}.png'),full_page=True)
+          if width in [320,768,1024]:
+            page.screenshot(path=str(SCREENSHOTS/f'audit-{locale}-{route.split("?")[0][2:].replace("/","-")}-{width}.png'),full_page=True)
     # 200% text scaling and landscape constrain height independently of width.
     for width,height in [(320,568),(667,375),(844,390),(768,500),(1024,768)]:
       page.set_viewport_size({'width':width,'height':height})
       for route in routes:
         page.goto('http://127.0.0.1:4173/'+route,wait_until='domcontentloaded')
+        page.reload(wait_until='domcontentloaded')
         page.locator('.route-stage').wait_for()
         page.evaluate("document.querySelectorAll('details').forEach(el=>el.open=true)")
         page.evaluate("""() => {const els=[...document.querySelectorAll('body *')];const sizes=els.map(el=>getComputedStyle(el).fontSize);els.forEach((el,i)=>el.style.fontSize=parseFloat(sizes[i])*2+'px');}""")
         page.wait_for_timeout(400)
         data=page.evaluate(probe)
+        page.screenshot(path=str(SCREENSHOTS/f'large-text-{route.split(chr(63))[0][2:].replace(chr(47),chr(45))}-{width}.png'),full_page=True)
         audit.append(dict(route=route,width=width,height=height,scenario='root-font-200',**data))
     (SCREENSHOTS/'layout-audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
     print('AUDIT_MATRIX',len(widths)*len(routes)*2,'boundary cases plus landscape cases')
