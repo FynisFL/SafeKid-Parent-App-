@@ -366,6 +366,7 @@ function renderSfaiConversation(){
 function refreshSfaiConversation(){
  if(S.route!=='/sfai')return;
  const messages=$('#sfai-messages');if(!messages)return;
+ const title=$('.sfai-session-title');if(title)title.textContent=currentSfaiSession()?.title||'S.F AI';
  messages.innerHTML=renderSfaiConversation();
  messages.scrollTop=messages.scrollHeight;
  const submit=$('#sfai-form [type=submit]');
