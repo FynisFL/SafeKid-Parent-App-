@@ -1,20 +1,19 @@
 # Architecture and product decisions
 
-Date: 2026-11-17  
-Current UX baseline: V7
+Scope: web/PWA and Capacitor Android test app
 
 ## Binding product decisions
 
-1. **Web/PWA phase only.** No native projects, backend, accounts, remote database, cloud sync, payments, analytics, cloud AI or watch pairing are part of this release.
+1. **Web/PWA and Android testing.** Capacitor wraps the same SPA and exposes native adapters. Keep data on the device. Accounts, cloud sync, payments, analytics, cloud AI and watch pairing are outside current scope.
 2. **No account login.** First-run onboarding is local parent-profile setup only. Do not add email/password or third-party sign-in unless the product owner explicitly changes scope.
-3. **Truthful location scope.** Browser geolocation is the location of the parent phone, never the child's or watch's location.
+3. **Truthful location scope.** Browser and native geolocation report the location of the parent phone, never the child's or watch's location.
 4. **Location Map is view-only.** `/location` displays actual parent-phone location and already-created Safe Zone overlays. It must not expose create/edit/pause/resume/delete actions.
 5. **Safe Zones has exclusive management ownership.** `/safe-zones` is the only route that can create, edit, pause/resume or delete Safe Zones. Both UI actions and persistence handlers enforce the route boundary.
 6. **Same-device SOS.** SOS persists locally and may use sound/haptics/notification on the same device only. No automatic call/SMS or remote alert is sent.
-7. **Foreground-only monitoring.** Geofence evaluation and reminders operate only while the app is open/visible. No background monitoring or scheduled-delivery claim is made.
-8. **Safe Zone defaults.** Spec §17.6 defaults remain: fix age 120 seconds, accuracy ≤50 m, two qualifying confirmation fixes, 25 m exit hysteresis, 5-minute dwell, 10-minute per-zone cooldown and 500 m default radius. Haversine distance is used.
-9. **Task model.** Task templates generate dated occurrences. Completion/reward is idempotent; coins derive from ledger entries. Reminders only run while the app is open/visible.
-10. **Local-first storage.** IndexedDB is used directly in this dependency-free implementation. No remote persistence. Local backup export/import and delete-data action are available; browser site-data clearing can remove records.
+7. **Foreground-only geofence evaluation.** Web reminders are checked while the app is open. Android can schedule local task notifications through Capacitor with permission.
+8. **Safe Zone defaults.** Geofence defaults: fix age 120 seconds, accuracy ≤50 m, two qualifying confirmation fixes, 25 m exit hysteresis, 5-minute dwell, 10-minute per-zone cooldown and 500 m default radius. Haversine distance is used.
+9. **Task model.** Task templates generate dated occurrences. Completion/reward is idempotent; coins derive from ledger entries. Reminder delivery follows the platform behavior above.
+10. **Local-first storage.** IndexedDB is used directly in the shared JavaScript app. No remote persistence. Local backup export/import and delete-data action are available; browser site-data clearing can remove records.
 11. **S.F AI is local and constrained.** It selects approved FAQ/Brand material only; it is not an LLM and makes no cloud calls. Emergency/out-of-scope/unmatched questions use approved safety/help copy.
 12. **Watch Passport is manual.** Provenance is user-entered. The app does not verify serials, pair with a watch or erase watch data.
 

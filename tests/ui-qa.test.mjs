@@ -45,7 +45,7 @@ test('MapTiler uses the supplied pastel vector style JSON through MapLibre, not 
   assert.match(adapter,/DEFAULT_MAP_STYLE_URL/);
   assert.match(app,/serviceWorker\.register\('\.\/sw\.js',\{updateViaCache:'none'\}\)/);
   assert.match(mapConfig,/https:\/\/api\.maptiler\.com\/maps\/streets-v4-pastel\/style\.json\?key=/);
-  assert.match(build,/style\s*\|\|\s*DEFAULT_MAP_STYLE_URL/);
+  assert.match(build,/readMapStyleOverride\(root\)\s*\|\|\s*DEFAULT_MAP_STYLE_URL/);
   assert.match(gitignore,/^\.env$/m);
 });
 
@@ -72,7 +72,7 @@ test('watch updates the map marker and live accuracy without recreating the map 
 });
 
 test('PWA cache version is incremented after map and responsive UI changes',()=>{
-  assert.match(sw,/safekid-pwa-v7-mobile-shell-r22/);
+  assert.match(sw,/safekid-pwa-v7-mobile-shell-r23/);
   assert.match(sw,/src\/config\/map\.js/);
 });
 
