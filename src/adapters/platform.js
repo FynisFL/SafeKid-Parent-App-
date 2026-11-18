@@ -1,13 +1,23 @@
+import { Native } from './native.js';
 import { DEFAULT_MAP_STYLE_URL } from '../config/map.js';
 export const Clock = { now: () => new Date(), iso: () => new Date().toISOString() };
 
 export const LocationAdapter = {
   async permissionState() {
+    if(Native.available){try{const p=await Native.bridge.Geolocation.checkPermissions();return p.location==='granted'||p.coarseLocation==='granted'?'granted':p.location;}catch{return 'unavailable';}}
     if (!('geolocation' in navigator)) return 'unsupported';
     try { const p=await navigator.permissions?.query({name:'geolocation'});return p?.state||'unknown'; }
     catch { return 'unknown'; }
   },
   async getCurrentPosition(options={}) {
+    if(Native.available){
+      const p=await Native.bridge.Geolocation.checkPermissions();
+      if(p.location!=='granted'&&p.coarseLocation!=='granted'){
+        const granted=await Native.bridge.Geolocation.requestPermissions();
+        if(granted.location!=='granted'&&granted.coarseLocation!=='granted')throw Object.assign(new Error('Hãy cấp quyền vị trí trong Cài đặt ứng dụng.'),{code:1});
+      }
+      return nativeFix(await Native.bridge.Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:options.timeout||15000}));
+    }
     if (!('geolocation' in navigator)) throw Object.assign(new Error('Trình duyệt không hỗ trợ định vị.'),{code:'unsupported'});
     return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(pos=>resolve({
       id:crypto.randomUUID(),latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracyMeters:pos.coords.accuracy,
@@ -16,21 +26,39 @@ export const LocationAdapter = {
     }),err=>reject(Object.assign(new Error(locationError(err.code)),{code:err.code})),{enableHighAccuracy:true,timeout:options.timeout||15000,maximumAge:options.maximumAge||0}));
   },
   watchPosition(onFix,onError) {
+    if(Native.available){
+      let stopped=false,watch;
+      this.getCurrentPosition().then(fix=>{
+        if(stopped)return;
+        onFix(fix);
+        return Native.bridge.Geolocation.watchPosition({enableHighAccuracy:true},(position,error)=>{
+          if(stopped)return;
+          if(error)onError(new Error(error.message||'Không thể theo dõi vị trí.'));
+          else if(position)onFix(nativeFix(position));
+        });
+      }).then(id=>{watch=id;if(stopped&&id)void Native.bridge.Geolocation.clearWatch({id});}).catch(onError);
+      return ()=>{stopped=true;if(watch)void Native.bridge.Geolocation.clearWatch({id:watch});};
+    }
     if (!('geolocation' in navigator)) {onError(new Error('Trình duyệt không hỗ trợ định vị.'));return ()=>{};}
     const id=navigator.geolocation.watchPosition(pos=>onFix({id:crypto.randomUUID(),latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracyMeters:pos.coords.accuracy,altitudeMeters:pos.coords.altitude,speedMetersPerSecond:pos.coords.speed,headingDegrees:pos.coords.heading,capturedAt:new Date(pos.timestamp).toISOString(),source:'parent_phone_web'}),err=>onError(Object.assign(new Error(locationError(err.code)),{code:err.code})),{enableHighAccuracy:true,maximumAge:10000,timeout:20000});
     return ()=>navigator.geolocation.clearWatch(id);
   },
   async requestPermission(level='when-in-use') {if(level==='always')return {state:'unsupported',message:'Vị trí nền có trong phiên bản ứng dụng di động.'};try{const fix=await this.getCurrentPosition();return {state:'granted',fix};}catch(e){return {state:e.code===1?'denied':e.code==='unsupported'?'unsupported':'restricted',message:e.message};}}
 };
+function nativeFix(position){
+ return {id:crypto.randomUUID(),...position.coords,accuracyMeters:position.coords.accuracy,
+ altitudeMeters:position.coords.altitude,speedMetersPerSecond:position.coords.speed,
+ headingDegrees:position.coords.heading,capturedAt:new Date(position.timestamp).toISOString(),source:'parent_phone_native'};
+}
 function locationError(code){return ({1:'Bạn đã từ chối quyền vị trí. Có thể thay đổi trong cài đặt trình duyệt.',2:'Không thể xác định vị trí. Hãy kiểm tra dịch vụ vị trí và thử lại.',3:'Yêu cầu vị trí đã hết thời gian chờ.'})[code]||'Không thể lấy vị trí hiện tại.';}
 
 export const NotificationAdapter = {
-  supported: () => 'Notification' in window,
-  permission: () => ('Notification' in window ? Notification.permission : 'unsupported'),
-  async requestPermission(){if(!('Notification' in window))return 'unsupported';return Notification.requestPermission();},
-  async notify(title,body,tag='safekid-local') {if(!('Notification' in window))return 'unsupported';if(Notification.permission!=='granted')return 'permission_denied';try{new Notification(title,{body,tag,renotify:false});return 'reported';}catch{return 'failed';}}
+  supported: () => Native.available || 'Notification' in window,
+  permission: () => Native.available?Native.bridge.notificationPermission:('Notification' in window ? Notification.permission : 'unsupported'),
+  async requestPermission(){if(Native.available)return Native.bridge.requestNotifications();if(!('Notification' in window))return 'unsupported';return Notification.requestPermission();},
+  async notify(title,body,tag='safekid-local') {if(Native.available){try{return await Native.bridge.notify(title,body,tag);}catch{return 'failed';}}if(!('Notification' in window))return 'unsupported';if(Notification.permission!=='granted')return 'permission_denied';try{new Notification(title,{body,tag,renotify:false});return 'reported';}catch{return 'failed';}}
 };
-export const HapticsAdapter = { async impact(){try{if(navigator.vibrate)navigator.vibrate([80,40,80]);return Boolean(navigator.vibrate);}catch{return false;}} };
+export const HapticsAdapter = { async impact(){if(Native.available){try{await Native.bridge.Haptics.vibrate();return true;}catch{return false;}}try{if(navigator.vibrate)navigator.vibrate([80,40,80]);return Boolean(navigator.vibrate);}catch{return false;}} };
 let sosAudioContext=null;
 let sosAlarmTimer=null;
 let sosAlarmPlaying=false;
@@ -154,7 +182,7 @@ export const AudioAdapter = {
     return playSosBellBurst(getSosAudioContext());
   }
 };
-export const FilesAdapter = { download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);} };
+export const FilesAdapter = { download(blob,name){if(Native.available)return Native.bridge.download(blob,name);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);} };
 export const GeofenceAdapter = {
   mode:'web_foreground',
   capabilities(){return {foreground:true,background:false,mode:'web_foreground',notice:'Theo dõi vùng an toàn chỉ chạy khi ứng dụng đang mở.'};},

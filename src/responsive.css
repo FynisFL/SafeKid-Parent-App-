@@ -320,3 +320,12 @@
   .app-shell .growth-motto-art { width:128px; height:120px; right:16px; bottom:0; }
   .app-shell .growth-motto-art > img { width:120px; height:120px; right:0; bottom:0; }
 }
+
+/* Android consumes system/IME insets in the native container before laying out this viewport. */
+.native-app .topbar { top:0; }
+.permission-actions { display:flex;flex-wrap:wrap;gap:12px;margin-top:20px; }
+.permission-actions .btn { flex:1 1 180px; }
+.app-shell .permission-list .permission-row { justify-content:space-between;padding:14px;gap:12px; }
+.app-shell .permission-list .permission-row > b { flex:1 1 150px; }
+.app-shell .sos-panel > p:has(> b) { display:grid;gap:8px;line-height:1.6; }
+.native-app .sfai-toolbar { padding-top:8px; }

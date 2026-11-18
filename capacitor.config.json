@@ -1,0 +1,13 @@
+{
+  "appId": "com.safekid.parent.test",
+  "appName": "SafeKid Test",
+  "webDir": "dist",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "disable"
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "native"
+    }
+  }
+}
