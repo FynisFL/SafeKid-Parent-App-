@@ -1,9 +1,10 @@
-const CACHE = 'safekid-pwa-v7-mobile-shell-r23';
+const CACHE = 'safekid-pwa-v7-mobile-shell-r24';
 const CACHE_PREFIX = 'safekid-pwa-v7-mobile-shell-';
 const CORE = [
   './',
   './assets/brand/app-icon-192.png',
   './assets/brand/app-icon-512.png',
+  './assets/brand/favicon-32.png',
   './assets/brand/safekid-logo-trimmed.png',
   './assets/illustrations/family-walk.webp',
   './assets/illustrations/mascot-cheer.webp',
