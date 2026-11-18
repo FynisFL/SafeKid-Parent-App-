@@ -137,6 +137,8 @@ try:
     page.locator('[data-scroll-target="settings-notifications"]').click()
     assert page.url.endswith('#/profile'), f'Settings shortcut changed route: {page.url}'
     assert page.locator('#settings-notifications').evaluate('(el)=>el.open')
+    switch_geometry = page.locator('.preference-switch').evaluate_all("els => els.map(el=>({right:el.getBoundingClientRect().right,width:el.getBoundingClientRect().width}))")
+    assert len(switch_geometry) == 5 and max(x['right'] for x in switch_geometry)-min(x['right'] for x in switch_geometry)<1 and all(x['width'] == 46 for x in switch_geometry), f'Notification switches must form one aligned column: {switch_geometry}'
     results.append('Settings hub anchors stay inside profile route')
 
     # Growth form conditional UI.
@@ -186,7 +188,7 @@ try:
     page.get_by_role('heading', name='S.F AI', exact=True).wait_for(timeout=3000)
     assert page.locator('#sfai-form').count() == 1
     assert page.locator('.sfai-disclosure').is_visible(), 'S.F AI limitation disclosure must be visible above the conversation'
-    assert page.get_by_text('không phải nhân viên trực tuyến', exact=False).count() > 0
+    assert 'không phải nhân viên trực tuyến' in page.locator('.sfai-disclosure').get_attribute('aria-label')
     prompt = page.locator('[data-sfai-prompt]').first
     page.evaluate('window.qaKeyboardEnabled = true')
     prompt.click()
@@ -337,6 +339,8 @@ try:
             last:wrap?.lastElementChild?{bottom:wrap.lastElementChild.getBoundingClientRect().bottom}:null};
         }''')
         assert metrics['scroll'] <= metrics['viewport'], f'overflow {route} at {width}px: {metrics}'
+        dock_geometry = page.locator('.family-dock').evaluate("el=>{const r=el.getBoundingClientRect(),b=el.querySelector('.mobile-sos-link .dock-icon').getBoundingClientRect();return {center:r.left+r.width/2,buttonCenter:b.left+b.width/2,relativeY:b.top+b.height/2-r.top};}")
+        assert abs(dock_geometry['center']-dock_geometry['buttonCenter'])<1 and abs(dock_geometry['relativeY']-9)<1, f'SOS must share the notch center: {dock_geometry}'
         assert metrics['nav'] and metrics['nav']['bottom'] <= height, f'nav outside viewport {route} at {width}px: {metrics}'
         if route == '#/sfai':
           composer = page.locator('#sfai-form').evaluate("el => {const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};}")
@@ -348,7 +352,7 @@ try:
         page.wait_for_timeout(30)
         bottom=page.evaluate('''() => {
           const nav=document.querySelector('.mobile-nav'), wrap=document.querySelector('.page-wrap');
-          return nav&&wrap?.lastElementChild ? wrap.lastElementChild.getBoundingClientRect().bottom <= Math.min(nav.getBoundingClientRect().top,nav.querySelector('.mobile-sos-link .mobile-nav-icon').getBoundingClientRect().top) + 1 : true;
+          return nav&&wrap?.lastElementChild ? wrap.lastElementChild.getBoundingClientRect().bottom <= Math.min(nav.getBoundingClientRect().top,nav.querySelector('.mobile-sos-link .dock-icon').getBoundingClientRect().top) + 1 : true;
         }''')
         assert bottom, f'Bottom nav overlaps final content {route} at {width}px'
       page.set_viewport_size({'width':390,'height':844})

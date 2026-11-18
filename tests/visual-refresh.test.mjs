@@ -16,7 +16,7 @@ test('SafeKid 3D companion mascots are bundled locally and used across key journ
   assert.match(source, /mascot-wave\.webp/);
   assert.match(source, /mascot-cheer\.webp/);
   assert.match(source, /sidebar-family-card/);
-  assert.match(source, /mobile-nav-icon/);
+  assert.match(source, /dock-icon/);
   assert.match(source, /growth-motto-art/);
 });
 
@@ -30,7 +30,7 @@ test('reduced-motion overrides cover new mascot and route animations', () => {
 
 test('service worker precaches mascot assets under a new cache revision', () => {
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
-  assert.match(sw, /safekid-pwa-v7-mobile-shell-r13/);
+  assert.match(sw, /safekid-pwa-v7-mobile-shell-r14/);
   assert.match(sw, /assets\/illustrations\/mascot-wave\.webp/);
   assert.match(sw, /assets\/illustrations\/mascot-cheer\.webp/);
   assert.match(sw, /src\/domain\/sos\.js/);
