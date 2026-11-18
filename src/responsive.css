@@ -388,3 +388,19 @@
     -webkit-mask-image: var(--native-dock-shape);
   }
 }
+
+/* Use SafeKid's press feedback on touch controls instead of the WebView overlay. */
+@media (any-pointer: coarse) {
+  #app :is(a[href], button, summary, label:has(input:is([type="radio"], [type="checkbox"])), [role="button"], [role="tab"]) {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+.native-app #app :is(a[href], button, summary, label:has(input:is([type="radio"], [type="checkbox"])), [role="button"], [role="tab"]) {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
