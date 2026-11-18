@@ -80,3 +80,5 @@ npm run build
 Kiểm thử trình duyệt cần Python, Playwright và Chromium. Cài bằng `python -m pip install playwright` và `python -m playwright install chromium`, mở server với `npm run dev`, rồi chạy `npm run test:e2e` ở terminal khác. Trên Linux, dùng `python3` nếu hệ thống không có lệnh `python`.
 
 Xem [audit cấu trúc](docs/SOURCE_AUDIT.md) và [checklist kiểm thử trên thiết bị](docs/UAT_CHECKLIST.md). Playwright dùng bản đồ giả lập trong một số luồng. GPS, quyền hệ điều hành, âm thanh SOS và cài APK cần xác nhận trên điện thoại thật.
+
+Tài liệu duy trì: [quyết định kỹ thuật](docs/DECISIONS.md), [hướng dẫn giao diện](docs/UI_DESIGN_GUIDE.md) và [nguồn tài nguyên](ASSET_CREDITS.md). FAQ, nội dung thương hiệu và câu trả lời S.F AI trong `content/` là dữ liệu ứng dụng.

@@ -1,12 +1,12 @@
 # SafeKid Parent App — V7 Owner Acceptance Checklist
 
-**Status:** not run on physical devices. This checklist requires a deployed HTTPS build, current browsers and access to MapTiler. Do not infer these outcomes from automated domain tests.
+Use this checklist to record device results for the build being tested. Web coverage requires HTTPS and map coverage requires access to MapTiler.
 
 ## Test setup
 
 - [ ] Deploy the contents of `dist/` to an HTTPS origin (do not deploy source root as the web root).
 - [ ] Restrict the browser MapTiler key to the exact HTTPS origin/referrer.
-- [ ] Open once while online so service worker `safekid-pwa-v7-mobile-shell-r2` installs.
+- [ ] Open the web app once online so its current service worker can cache the app shell.
 - [ ] Use a fresh browser profile for first-run tests; record device model, OS, browser version and date.
 - [ ] Use only safe test locations and test contacts. Export a backup before destructive reset/import scenarios.
 - [ ] Run a second pass with OS/browser reduced-motion enabled.
@@ -117,3 +117,11 @@
 - [ ] Confirm Watch Passport labels manual/user-entered/unverified and does not imply watch pairing or remote wipe.
 - [ ] Install PWA and verify icon/name, update behavior, offline shell and local records.
 - [ ] Verify local delete returns to onboarding and removes all local profile data after confirmation.
+
+## Android APK
+
+- [ ] Record the APK build and Android version. Install the test APK and verify launch, GPS permission, notification permission and local task alerts.
+- [ ] Confirm the status bar, bottom navigation and keyboard leave form controls visible.
+- [ ] Hold a navigation tab or motion setting on a touch screen. Confirm no WebView highlight, text selection or link menu appears. Confirm text selection still works in entry fields.
+- [ ] Trigger and resolve a local test SOS. Check sound and local notification behavior with permissions granted and denied.
+- [ ] Export a backup and confirm the Android share sheet can save or share it.
