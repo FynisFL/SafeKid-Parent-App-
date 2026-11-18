@@ -209,6 +209,18 @@ try:
     page.locator('.sos-emergency [data-action^="sos-ack:"]').click()
     page.get_by_text('Bạn đã xác nhận SOS', exact=False).wait_for(timeout=3000)
     assert page.locator('[data-action="sos-confirm"]').count() == 0, 'Acknowledged SOS must remain open'
+    assert page.locator('.sos-active-state').evaluate("""el => {
+      const [status,time,note]=[...el.children].map(child=>child.getBoundingClientRect());
+      return status.bottom < time.top && time.bottom < note.top;
+    }"""), 'SOS acknowledgement, time and next step must not run together'
+    page.evaluate("document.documentElement.classList.add('native-app')")
+    assert page.locator('.family-dock').evaluate("""el => {
+      const bounds=el.getBoundingClientRect(), bg=getComputedStyle(el,'::before');
+      return Math.abs(bounds.bottom-innerHeight)<1 && bounds.left===0
+        && Math.abs(bounds.right-innerWidth)<1 && bg.backgroundColor==='rgb(242, 250, 249)';
+    }"""), 'Android dock must cover the full-width viewport edge with an opaque surface'
+    page.evaluate("document.documentElement.classList.remove('native-app')")
+
     page.locator('[data-action^="sos-resolve:"]').first.click()
     page.locator('[data-action="sos-confirm"]').wait_for(state='visible',timeout=3000)
     assert page.locator('[data-action="sos-confirm"]').count() == 1, 'Resolving SOS should return to idle activation state'

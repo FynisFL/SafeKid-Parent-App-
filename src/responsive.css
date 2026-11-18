@@ -327,5 +327,64 @@
 .permission-actions .btn { flex:1 1 180px; }
 .app-shell .permission-list .permission-row { justify-content:space-between;padding:14px;gap:12px; }
 .app-shell .permission-list .permission-row > b { flex:1 1 150px; }
-.app-shell .sos-panel > p:has(> b) { display:grid;gap:8px;line-height:1.6; }
 .native-app .sfai-toolbar { padding-top:8px; }
+
+/* Keep acknowledgement, timestamp and next step legible as separate lines. */
+.sos-active-state {
+  display: grid;
+  gap: 6px;
+  margin: 16px auto;
+  padding: 14px;
+  max-width: 36rem;
+  border: 1px solid #edc9ce;
+  border-radius: 16px;
+  background: #fff8f8;
+  color: #743b46;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.sos-active-state :is(time,small) { font-size: .875rem; }
+.active-sos-copy h2 { margin: 0; font-size: 1.125rem; line-height: 1.35; }
+.app-shell .active-sos-card { gap: 16px; }
+@media (max-width:767px) {
+  .app-shell .active-sos-card > .row-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0,1fr);
+    gap: 8px;
+  }
+  .app-shell .active-sos-card > .row-actions > .btn { width: 100%; }
+}
+
+/* Use SafeKid's teal accents across the zone page, map picker and schedule. */
+.route-stage[data-page="safe-zones"] > .page-intro {
+  padding: 16px;
+  border: 1px solid var(--sk-border);
+  border-radius: 22px;
+  background: linear-gradient(120deg,#e2f6f2,var(--sk-soft-tint));
+}
+.route-stage[data-page="safe-zones"] > .page-intro :is(h1,p) { color: var(--sk-deep-blue); }
+.route-stage[data-page="safe-zones"] .zone-card { border-inline-start-color: var(--sk-primary); }
+.app-shell .zone-builder-form :is(.zone-location-picker,.zone-radius-block,.zone-schedule-details) {
+  background: #edf8f7;
+  border: 1px solid #cde7e6;
+  border-radius: 16px;
+  color: var(--sk-deep-blue);
+}
+.app-shell .zone-builder-form .zone-schedule-details { padding: 12px; }
+.app-shell :is(.zone-builder-map,.zone-picked-location) { background: var(--sk-soft-tint); }
+.app-shell .zone-map-marker { background: #0a8990; box-shadow: 0 4px 12px #2d556840; }
+.app-shell .zone-builder-form :is(input[type="range"],input[type="checkbox"]) { accent-color: #087e85; }
+
+/* The native viewport already excludes the Android navigation inset. */
+@media (max-width:767px) {
+  .native-app .app-shell .mobile-nav.family-dock { left: 0; right: 0; bottom: 0; }
+  .native-app .app-shell .mobile-nav.family-dock::before {
+    background: #f2faf9;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    --native-dock-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 88' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M24 0H142C154 0 158 4 164 14C173 35 181 43 200 43C219 43 227 35 236 14C242 4 246 0 258 0H376Q400 0 400 24V88H0V24Q0 0 24 0Z'/%3E%3C/svg%3E");
+    mask-image: var(--native-dock-shape);
+    -webkit-mask-image: var(--native-dock-shape);
+  }
+}
