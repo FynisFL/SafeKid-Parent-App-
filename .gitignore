@@ -6,3 +6,6 @@ dist/
 
 android/
 ios/
+
+# Browser regression artifacts
+screenshots/
