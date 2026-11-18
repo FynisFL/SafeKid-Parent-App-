@@ -290,7 +290,7 @@ try:
           return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,
             footer:footer.getBoundingClientRect().bottom, viewport:innerHeight};
         }""")
-        assert bounds['left'] >= 0 and bounds['right'] <= width and bounds['top'] >= 0 and bounds['bottom'] <= height and bounds['footer'] <= height, (route,action,width,bounds)
+        assert bounds['right'] - bounds['left'] >= width - 24 and bounds['left'] >= 0 and bounds['right'] <= width and bounds['top'] >= 0 and bounds['bottom'] <= height and bounds['footer'] <= height, (route,action,width,bounds)
         dialog.locator('.modal-head [data-action="modal-close"]').click()
         dialog.wait_for(state='detached')
     results.append('Ten popup entry points checked at two mobile sizes')
@@ -322,6 +322,9 @@ try:
           assert hierarchy['location'] < hierarchy['quick'] < hierarchy['support'] and hierarchy['hero'] == 'none', f'Home must prioritize parent GPS status and actions over decoration: {hierarchy}'
           assert hierarchy['date'] and hierarchy['dateFont'] != '0px', f'Home date label must be readable: {hierarchy}'
         if route == '#/growth':
+          summary = page.locator('.growth-summary').evaluate("el => [...el.children].map(card => {const r=card.getBoundingClientRect();return {top:r.top,height:r.height,value:card.querySelector('strong').getBoundingClientRect().top};})")
+          assert abs(summary[0]['height'] - summary[1]['height']) < 1 and abs(summary[0]['value'] - summary[1]['value']) < 1, f'Growth summaries must align: {summary}'
+
           tabs = page.locator('.tabbar a').evaluate_all("els => els.map(el => ({width:el.offsetWidth,height:el.offsetHeight}))")
           assert len(tabs) == 5 and all(x['height'] >= 44 for x in tabs), f'Growth tabs must keep usable touch targets at {width}px: {tabs}'
         metrics=page.evaluate('''() => {
