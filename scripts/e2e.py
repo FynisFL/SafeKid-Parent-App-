@@ -475,6 +475,8 @@ try:
         return Math.abs(icon.left+icon.width/2-text.left-text.width/2);
       })""")
       assert max(centers)<1, ('Shortcut alignment',width,centers)
+      assert page.locator('.location-feature .feature-actions .btn').evaluate_all("els=>els.every(el=>el.getBoundingClientRect().height>=44&&parseFloat(getComputedStyle(el).fontSize)>=14)")
+
       if 768<=width<=1023:
         assert page.locator('.sidebar').evaluate("el=>el.getBoundingClientRect().width")==80
         assert page.locator('.sidebar .nav-icon').evaluate_all("els=>els.every(el=>el.getBoundingClientRect().width>=40)")

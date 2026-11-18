@@ -214,3 +214,23 @@
 .app-shell .plan-feature b { font-size:.875rem; }
 .app-shell .plan-feature em { font-size:.75rem; }
 .app-shell .map-view-hint { font-size:.75rem; }
+
+/* Override older component-specific button sizes as well as shared defaults. */
+.app-shell .location-feature .feature-actions .btn {
+  min-height: 48px;
+  font-size: .875rem;
+  line-height: 1.4;
+}
+.app-shell .settings-support-links > a { min-height: 44px; }
+.app-shell .map-readonly-note .text-link {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.app-shell .sfai-disclosure { font-size: .75rem; line-height: 1.5; }
+.app-shell .sidebar { overflow-y: auto; overscroll-behavior: contain; }
+@media (min-width:768px) {
+  .app-shell .sfai-messages .chat-message { font-size: .9375rem; line-height: 1.6; }
+}
