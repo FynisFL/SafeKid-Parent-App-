@@ -1,4 +1,4 @@
-const CACHE = 'safekid-pwa-v7-mobile-shell-r24';
+const CACHE = 'safekid-pwa-v7-mobile-shell-r25';
 const CACHE_PREFIX = 'safekid-pwa-v7-mobile-shell-';
 const CORE = [
   './',

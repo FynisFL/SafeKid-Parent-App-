@@ -23,7 +23,7 @@ function configureAndroidLauncherIcon(manifestXml) {
 `);
  writeResource('values', 'safekid_launcher.xml', `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="safekid_launcher_background">#010101</color>
+    <color name="safekid_launcher_background">#edf9fc</color>
 </resources>
 `);
  return manifestXml.replace(/android:(icon|roundIcon)="[^"]*"/g, 'android:$1="@drawable/safekid_launcher"');
