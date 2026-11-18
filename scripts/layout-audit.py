@@ -1,0 +1,557 @@
+from playwright.sync_api import sync_playwright
+from pathlib import Path
+import json, sys, time
+
+ROOT = Path(__file__).resolve().parents[1]
+SCREENSHOTS = ROOT / 'screenshots'
+SCREENSHOTS.mkdir(exist_ok=True)
+errors = []
+console_errors = []
+results = []
+
+MAPLIBRE_MOCK = r'''(() => {
+  class MockMap {
+    constructor(options) {
+      this.container = options.container;
+      this.events = {};
+      this.sources = {};
+      this.container.innerHTML = '<div class="mock-map-surface" aria-label="Test-only map fixture">Map fixture · test only</div>';
+      this.container.classList.add('maplibregl-map');
+      this.container.addEventListener('click', (event) => {
+        if (event.target.closest('.zone-map-marker')) return;
+        (this.events.click || []).forEach(fn => fn({ lngLat: { lng: 106.69, lat: 10.77 } }));
+      });
+      setTimeout(() => (this.events.load || []).forEach(fn => fn()), 30);
+    }
+    addControl() { return this; }
+    on(name, fn) { (this.events[name] ||= []).push(fn); return this; }
+    addSource(name, source) { this.sources[name] = { ...source, setData(data) { this.data = data; } }; return this; }
+    getSource(name) { return this.sources[name]; }
+    addLayer() { return this; }
+    flyTo() { return this; }
+    resize() { return this; }
+    remove() { this.container.innerHTML = ''; }
+  }
+  class MockMarker {
+    constructor(options = {}) { this.element = options.element || document.createElement('div'); this.listeners = {}; this.pos = { lng: 106.69, lat: 10.77 }; }
+    setLngLat(pair) { this.pos = { lng: pair[0], lat: pair[1] }; return this; }
+    getLngLat() { return this.pos; }
+    setPopup() { return this; }
+    addTo(map) { map.container.appendChild(this.element); return this; }
+    on(name, fn) { this.listeners[name] = fn; return this; }
+  }
+  class MockPopup { setText() { return this; } }
+  window.maplibregl = { Map: MockMap, Marker: MockMarker, Popup: MockPopup,
+    NavigationControl: class {}, ScaleControl: class {} };
+})();'''
+
+try:
+  with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server'])
+    context = browser.new_context(viewport={'width':390, 'height':844}, device_scale_factor=1, is_mobile=True, has_touch=True)
+    context.add_init_script(MAPLIBRE_MOCK)
+    # Device emulation has no OS keyboard. Simulate its visual viewport resize.
+    context.add_init_script("""(() => {
+      const viewport=window.visualViewport;
+      if(!viewport)return;
+      const height=Object.getOwnPropertyDescriptor(VisualViewport.prototype,'height').get;
+      Object.defineProperty(viewport,'height',{get(){
+        const textEntry=document.activeElement?.matches('input[type=text],input:not([type]),textarea');
+        return height.call(viewport)-(textEntry&&window.qaKeyboardEnabled?260:0);
+      }});
+      for(const event of ['focusin','focusout'])
+        document.addEventListener(event,()=>requestAnimationFrame(()=>viewport.dispatchEvent(new Event('resize'))));
+    })();""")
+    page = context.new_page()
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.on('console', lambda m: console_errors.append(m.text) if m.type == 'error' else None)
+    page.route('https://api.maptiler.com/geocoding/**', lambda route: route.fulfill(status=200, content_type='application/json', body=json.dumps({
+      'type':'FeatureCollection','features':[{'type':'Feature','place_name':'Trường ABC, Thành phố Hồ Chí Minh','text':'Trường ABC','geometry':{'type':'Point','coordinates':[106.69,10.77]},'properties':{'name':'Trường ABC'}}]
+    })))
+    page.goto('http://127.0.0.1:4173', wait_until='domcontentloaded', timeout=10000)
+    page.wait_for_selector('#onboarding-form', timeout=8000)
+    assert page.locator('.app-shell').count() == 0, 'First-run must not render App Shell'
+    assert page.locator('.mobile-nav').count() == 0, 'First-run must not render navigation'
+    assert page.locator('input[name="parentName"]').is_visible(), 'Parent name must be visible immediately'
+    assert page.locator('button[type="submit"]').is_visible(), 'Setup CTA must be visible immediately'
+    onboarding_geometry = page.evaluate('''() => { const f=document.querySelector('#onboarding-form'); const r=f.getBoundingClientRect(); return {top:r.top,bottom:r.bottom,viewport:innerHeight,scrollHeight:document.documentElement.scrollHeight}; }''')
+    assert onboarding_geometry['top'] >= 0 and onboarding_geometry['top'] < onboarding_geometry['viewport'], onboarding_geometry
+    results.append('P0 onboarding shell isolation + above-the-fold form')
+    page.screenshot(path=str(SCREENSHOTS/'v7-onboarding-390.png'), full_page=True)
+
+    # Mobile responsive screenshot matrix for first-run and post-setup home.
+    for width, height in [(320,640),(360,800),(375,812),(390,844),(430,932),(767,900)]:
+      page.set_viewport_size({'width':width,'height':height})
+      page.wait_for_timeout(80)
+      metrics = page.evaluate('''() => ({viewport:document.documentElement.clientWidth, scroll:document.documentElement.scrollWidth, form:!!document.querySelector('#onboarding-form'), nav:!!document.querySelector('.mobile-nav')})''')
+      assert metrics['scroll'] <= metrics['viewport'], f'onboarding horizontal overflow at {width}px: {metrics}'
+      assert metrics['form'] and not metrics['nav'], f'first-run flow isolation at {width}px: {metrics}'
+      page.screenshot(path=str(SCREENSHOTS/f'v7-onboarding-{width}.png'), full_page=True)
+    results.append('Onboarding overflow/layout viewport matrix 320, 360, 375, 390, 430, 767px')
+
+    page.set_viewport_size({'width':390,'height':844})
+    page.locator('input[name="parentName"]').fill('QA Parent')
+    page.locator('input[name="childName"]').fill('QA Child')
+    page.locator('#onboarding-form button[type="submit"]').click()
+    page.wait_for_selector('.app-shell', timeout=5000)
+    assert page.locator('.mobile-nav').count() == 1
+    assert page.get_by_text('Chào Parent!', exact=True).count() == 1, 'Vietnamese greeting uses the final name in the parent profile'
+    results.append('Onboarding completion -> app shell transition')
+
+    # More hub and Safe Zone: test that an unselected location cannot save.
+    page.evaluate("window.safeKidTestNav = document.querySelector('.mobile-nav')")
+    page.locator('.mobile-nav a[href="#/more"]').click()
+    page.locator('.more-hub a[href="#/safe-zones"]').click()
+    page.locator('[data-action="modal-zone"]').first.click()
+    page.locator('input[name="name"]').fill('QA Zone')
+    page.locator('button[type="submit"][form="zone-form"]').click()
+    page.get_by_text('Hãy tìm hoặc chọn một vị trí trên bản đồ trước khi lưu.', exact=False).wait_for(timeout=5000)
+    assert page.get_by_text('Chưa có vùng an toàn nào', exact=False).count() == 0 or page.locator('.zone-card').count() == 0
+    page.locator('.modal-head [data-action="modal-close"]').click()
+    page.locator('[data-action="modal-zone"]').first.click()
+    page.locator('input[name="name"]').fill('QA Zone')
+    page.locator('#zone-place-search').fill('Trường ABC')
+    page.locator('[data-action="zone-search"]').click()
+    page.locator('[data-zone-result="0"]').wait_for(timeout=4000)
+    page.locator('[data-zone-result="0"]').click()
+    page.locator('#zone-radius-range').fill('350')
+    page.locator('button[type="submit"][form="zone-form"]').click()
+    page.get_by_text('QA Zone', exact=True).wait_for(timeout=4000)
+    results.append('Safe Zone search -> place selection -> radius -> save; blank-coordinate guard')
+
+    # Location screen remains view-only, with no Safe Zone CRUD actions.
+    assert page.evaluate("window.safeKidTestNav === document.querySelector('.mobile-nav')"), 'Navigation node must persist between routes'
+    page.locator('.mobile-nav a[href="#/location"]').click()
+    page.get_by_text('Bản đồ chỉ hiển thị', exact=True).wait_for(timeout=3000)
+    assert page.locator('[data-action="modal-zone"]').count() == 0
+    assert page.locator('[data-action^="zone-edit:"]').count() == 0
+    assert page.locator('[data-action^="zone-delete:"]').count() == 0
+    assert page.locator('a[href="#/safe-zones"]').count() > 0
+    results.append('Location map read-only invariant')
+    page.screenshot(path=str(SCREENSHOTS/'v7-location-390.png'), full_page=True)
+
+    # Settings jump must open accordion without changing router route.
+    page.locator('a[href="#/more"]').click()
+    page.locator('.more-hub a[href="#/profile"]').click()
+    assert page.url.endswith('#/profile')
+    page.locator('[data-scroll-target="settings-notifications"]').click()
+    assert page.url.endswith('#/profile'), f'Settings shortcut changed route: {page.url}'
+    assert page.locator('#settings-notifications').evaluate('(el)=>el.open')
+    switch_geometry = page.locator('.preference-switch').evaluate_all("els => els.map(el=>({right:el.getBoundingClientRect().right,width:el.getBoundingClientRect().width}))")
+    assert len(switch_geometry) == 5 and max(x['right'] for x in switch_geometry)-min(x['right'] for x in switch_geometry)<1 and all(x['width'] == 46 for x in switch_geometry), f'Notification switches must form one aligned column: {switch_geometry}'
+    results.append('Settings hub anchors stay inside profile route')
+
+    # Motion settings apply immediately, persist, and honor the OS accessibility preference.
+    page.locator('[data-scroll-target="settings-motion"]').click()
+    motion = page.locator('#settings-motion')
+    assert motion.locator('[value="moderate"]').is_checked()
+    maximum_saved = """async () => {
+      const {getOne}=await import('/src/adapters/storage.js');
+      return (await getOne('meta','preferences'))?.value?.motion === 'maximum';
+    }"""
+    motion.locator('label:has([value="maximum"])').click()
+    page.wait_for_function("document.documentElement.dataset.motion === 'maximum'")
+    page.wait_for_function(maximum_saved)
+    max_duration = page.locator('html').evaluate("el => getComputedStyle(el).getPropertyValue('--motion-page').trim()")
+    assert max_duration == '355ms', max_duration
+    motion.locator('[data-action="motion-preview"]').click()
+    assert motion.locator('label:has([value="maximum"])').evaluate("el => el.getAnimations().some(animation => animation.id === 'motion-preview')")
+    page.emulate_media(reduced_motion='reduce')
+    page.wait_for_function("document.documentElement.dataset.motion === 'reduced'")
+    assert motion.locator('#motion-system-note').is_visible()
+    assert motion.locator('[value="maximum"]').is_checked()
+    page.emulate_media(reduced_motion='no-preference')
+    page.wait_for_function("document.documentElement.dataset.motion === 'maximum'")
+    assert not motion.locator('#motion-system-note').is_visible()
+    page.reload()
+    page.wait_for_function("document.documentElement.dataset.motion === 'maximum'")
+    page.locator('[data-scroll-target="settings-motion"]').click()
+    assert motion.locator('[value="maximum"]').is_checked()
+    motion.locator('label:has([value="reduced"])').click()
+    page.wait_for_function("document.documentElement.dataset.motion === 'reduced'")
+    assert page.locator('.mobile-nav').evaluate("el => getComputedStyle(el,'::after').transitionDuration") == '0s'
+    motion.locator('label:has([value="moderate"])').click()
+    page.wait_for_function("document.documentElement.dataset.motion === 'moderate'")
+    results.append('Three motion levels, live preview, persisted preference and system reduced-motion override')
+
+    # Growth form conditional UI.
+    page.locator('.mobile-nav a[href="#/growth"]').click()
+    page.set_viewport_size({'width':390,'height':560})
+    page.locator('.intro-actions [data-action="modal-task"]').click()
+    page.evaluate('window.qaKeyboardEnabled = true')
+    page.locator('input[name="title"]').focus()
+    page.wait_for_function("document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
+    keyboard_state = page.evaluate("""() => {const nav=document.querySelector('.mobile-nav');return {width:innerWidth,mobile:matchMedia('(max-width: 767px)').matches,active:document.activeElement?.outerHTML?.slice(0,180),shell:document.querySelector('.app-shell')?.className,focused:document.activeElement?.getAttribute('name'),navDisplay:nav?getComputedStyle(nav).display:null,navParent:nav?.parentElement?.className,styles:[...document.styleSheets].map(s=>({href:s.href,keyboardRule:(()=>{try{return [...s.cssRules].some(r=>r.selectorText==='.app-shell.keyboard-open .mobile-nav')}catch{return 'blocked'}})()}))};}""")
+    assert 'keyboard-open' in (keyboard_state['shell'] or ''), f'Task form focus must activate keyboard shell state: {keyboard_state}'
+    assert not page.locator('.mobile-nav').is_visible(), f'Bottom navigation must be hidden while task form input is focused: {keyboard_state}'
+    submit_rect = page.locator('button[type="submit"][form="task-form"]').evaluate("(el) => ({bottom:el.getBoundingClientRect().bottom,visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)})")
+    assert submit_rect['visible'] and submit_rect['bottom'] <= 300, f'Task submit action must remain inside keyboard-visible viewport: {submit_rect}'
+    page.evaluate('window.qaKeyboardEnabled = false')
+    page.set_viewport_size({'width':390,'height':844})
+    assert page.locator('#reminder-time-wrap').is_hidden()
+    page.locator('input[name="reminderEnabled"]').check()
+    assert page.locator('#reminder-time-wrap').is_visible()
+    page.locator('select[name="repeat"]').select_option('weekly')
+    assert page.locator('#task-weekday-wrap').is_visible()
+    weekday_index = page.evaluate("() => (new Date().getDay() + 6) % 7")
+    page.locator('.weekday-chip input[name="weekday"]').nth(weekday_index).check()
+    page.locator('input[name="title"]').fill('QA weekly task')
+    page.locator('button[type="submit"][form="task-form"]').click()
+    page.get_by_text('QA weekly task', exact=True).wait_for(timeout=4000)
+    results.append('Growth conditional reminder and weekly weekday controls')
+
+    # SOS cannot be duplicated while active or acknowledged.
+    page.locator('.mobile-nav a[href="#/sos"]').click()
+    page.locator('[data-action="sos-confirm"]').click()
+    page.locator('[data-action="sos-trigger"]').click()
+    page.get_by_role('heading', name='CẢNH BÁO SOS', exact=True).wait_for(timeout=4000)
+    assert page.locator('[data-action="sos-confirm"]').count() == 0
+    page.locator('.sos-emergency [data-action^="sos-ack:"]').click()
+    page.get_by_text('Bạn đã xác nhận SOS', exact=False).wait_for(timeout=3000)
+    assert page.locator('[data-action="sos-confirm"]').count() == 0, 'Acknowledged SOS must remain open'
+    page.locator('[data-action^="sos-resolve:"]').first.click()
+    page.locator('[data-action="sos-confirm"]').wait_for(state='visible',timeout=3000)
+    assert page.locator('[data-action="sos-confirm"]').count() == 1, 'Resolving SOS should return to idle activation state'
+    results.append('SOS two-step activation, duplicate guard, acknowledge and resolve')
+
+    page.locator('.sos-sound-settings summary').click()
+    page.locator('#sos-audio-form select').select_option('urgent')
+    page.locator('#sos-audio-form button[type="submit"]').click()
+    page.locator('#sos-audio-form option[value="urgent"][selected]').wait_for(state='attached')
+    page.reload()
+    page.locator('.sos-sound-settings summary').click()
+    assert page.locator('#sos-audio-form select').get_attribute('name') == 'tone'
+    assert page.locator('#sos-audio-form select').evaluate('el=>el.value') == 'urgent'
+    import wave, math, struct, tempfile
+    with tempfile.TemporaryDirectory() as audio_directory:
+      audio_path = Path(audio_directory) / 'qa-alarm.wav'
+      with wave.open(str(audio_path), 'wb') as audio_file:
+        audio_file.setnchannels(1)
+        audio_file.setsampwidth(2)
+        audio_file.setframerate(8000)
+        audio_file.writeframes(b''.join(struct.pack('<h', int(6000 * math.sin(2 * math.pi * 440 * i / 8000))) for i in range(8000)))
+      page.locator('#sos-audio-form input[name="audio"]').set_input_files(str(audio_path))
+      page.locator('#sos-audio-form select').select_option('custom')
+      page.locator('#sos-audio-form button[type="submit"]').click()
+      page.locator('#sos-audio-form option[value="custom"][selected]').wait_for(state='attached')
+      page.locator('.sos-sound-settings summary').click()
+      page.get_by_text('qa-alarm.wav', exact=True).wait_for()
+      page.reload()
+      page.locator('.sos-sound-settings summary').click()
+      assert page.locator('#sos-audio-form select').evaluate('el=>el.value') == 'custom'
+      assert page.get_by_text('qa-alarm.wav', exact=True).count() == 1
+    results.append('SOS tone and custom audio file persist on the device')
+
+    # Dedicated support destinations and discoverability.
+    page.locator('.mobile-nav a[href="#/home"]').click()
+    page.locator('.support-entry-card[href="#/sfai"]').first.wait_for(timeout=3000)
+    page.locator('.support-entry-card[href="#/sfai"]').first.click()
+    page.get_by_role('heading', name='S.F AI', exact=True).wait_for(timeout=3000)
+    assert page.locator('#sfai-form').count() == 1
+    assert page.locator('.sfai-disclosure').is_visible(), 'S.F AI limitation disclosure must be visible above the conversation'
+    assert 'không phải nhân viên trực tuyến' in page.locator('.sfai-disclosure').get_attribute('aria-label')
+    page.locator('[data-action="sfai-info"]').click()
+    page.locator('.modal-copy').filter(has_text='S.F AI tra cứu').wait_for()
+    page.locator('.modal-head [data-action="modal-close"]').click()
+    page.locator('.modal-backdrop').wait_for(state='detached')
+    chat_regions = page.locator('.route-stage').evaluate("el => ['.sfai-toolbar','.sfai-disclosure','.sfai-workspace'].map(s=>{const r=el.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom};})")
+    assert chat_regions[0]['bottom'] <= chat_regions[1]['top']+1 and chat_regions[1]['bottom'] <= chat_regions[2]['top']+1, f'Chat toolbar, disclosure and conversation must not overlap: {chat_regions}'
+    prompt = page.locator('[data-sfai-prompt]').first
+    page.evaluate('window.qaKeyboardEnabled = true')
+    prompt.click()
+    page.wait_for_function("document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
+    assert page.locator('#sfai-form input[name="question"]').input_value() != ''
+    assert page.locator('.app-shell').evaluate("(el) => el.classList.contains('keyboard-open')"), 'Text focus must activate keyboard shell state'
+    assert not page.locator('.mobile-nav').is_visible(), 'Bottom navigation must yield space while a mobile text field is focused'
+    keyboard_composer = page.locator('#sfai-form').evaluate("el => {const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,viewport:visualViewport.height};}")
+    assert keyboard_composer['top'] >= 0 and keyboard_composer['bottom'] <= keyboard_composer['viewport'] + 1, f'Composer must stay above the keyboard: {keyboard_composer}'
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    assert page.locator('#sfai-form input[name="question"]').evaluate('el => document.activeElement === el'), 'Sending with Enter must retain input focus'
+    page.wait_for_function("document.querySelector('#sfai-form input[name=question]')?.value === ''")
+    assert page.locator('.chat-message.user').count() > 0
+    page.locator('.sfai-thinking').wait_for(state='detached')
+    page.locator('.chat-message.assistant').first.wait_for()
+    page.locator('#sfai-form input[name="question"]').evaluate('(el) => el.blur()')
+    page.wait_for_function("!document.querySelector('.app-shell')?.classList.contains('keyboard-open')")
+    assert page.locator('.mobile-nav').is_visible(), 'Bottom navigation must return after text focus ends'
+    results.append('Home S.F AI entry -> dedicated assistant route -> prompt fills composer; keyboard shell hides/restores nav')
+    page.locator('#sfai-form input[name="question"]').fill('Xin chào bro')
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    page.locator('.chat-message.assistant').filter(has_text='Chào bạn!').wait_for()
+    page.locator('#sfai-form input[name="question"]').fill('Mở vùng an toàn')
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    page.locator('.sfai-route-actions a[href="#/safe-zones"]').wait_for()
+    page.locator('#sfai-form input[name="question"]').fill('Viết bài về vũ trụ')
+    page.locator('#sfai-form input[name="question"]').press('Enter')
+    page.locator('.handoff-label').filter(has_text='Chưa có yêu cầu nào được gửi').wait_for()
+    saved_text = page.locator('.chat-message.user').first.inner_text()
+    page.reload()
+    page.locator('.chat-message.user').first.wait_for()
+    assert page.locator('.chat-message.user').first.inner_text() == saved_text
+    page.locator('[data-action="sfai-new"]').click()
+    page.locator('.sfai-welcome').wait_for()
+    assert page.locator('.chat-message.user').count() == 0
+    page.locator('[data-action="sfai-history"]').click()
+    page.locator('.sfai-session-row').filter(has_text=saved_text).locator('.sfai-session-open').click()
+    page.locator('.chat-message.user').first.wait_for()
+    assert page.locator('.chat-message.user').first.inner_text() == saved_text
+    page.locator('[data-action="sfai-history"]').click()
+    page.locator('.sfai-session-row').filter(has_text=saved_text).get_by_text('Đổi tên', exact=True).click()
+    page.locator('#sfai-rename-form input').fill('GPS gia đình')
+    page.locator('button[form="sfai-rename-form"][type="submit"]').click()
+    page.locator('.sfai-session-title').filter(has_text='GPS gia đình').wait_for()
+    page.locator('[data-action="sfai-history"]').click()
+    page.locator('.sfai-session-row').filter(has_text='0 tin nhắn').get_by_text('Xóa', exact=True).click()
+    page.locator('[data-action="confirm-pending-action"]').click()
+    page.locator('.modal-backdrop').wait_for(state='detached')
+    page.reload()
+    page.locator('.sfai-session-title').filter(has_text='GPS gia đình').wait_for()
+    assert page.locator('.chat-message.user').first.inner_text() == saved_text
+    results.append('Local sessions survive reload, remain isolated, and support rename and delete')
+
+    page.locator('a[href="#/more"]').click()
+    page.locator('.support-entry-card--hub[href="#/sfai"]').wait_for(timeout=3000)
+    page.locator('.more-hub a[href="#/help"]').click()
+    page.get_by_role('heading', name='Câu hỏi thường gặp', exact=True).wait_for(timeout=3000)
+    assert page.locator('#faq-search').count() == 1
+    assert page.locator('#sfai-form').count() == 0
+    assert page.locator('[data-faq-category]').count() >= 6, 'FAQ should expose categories from approved Markdown headings'
+    page.locator('#faq-search').fill('vi tri')
+    page.wait_for_timeout(100)
+    assert page.locator('.faq-item').count() > 0, 'Accent-insensitive FAQ search for "vi tri" should find the approved position FAQ'
+    faq_count = int(page.locator('#faq-count').inner_text().split()[0])
+    assert 0 < faq_count < 30, f'FAQ result count should reflect filtered results, got {faq_count}'
+    page.locator('[data-faq-category="SOS"]').click()
+    assert page.locator('[data-faq-category="SOS"]').get_attribute('aria-pressed') == 'true'
+    assert page.locator('.faq-item').count() > 0, 'SOS topic should expose approved SOS FAQ entries'
+    page.locator('[data-faq-category="all"]').click()
+    page.locator('a[href="#/sfai"]').last.wait_for(timeout=3000)
+    results.append('FAQ remains independent, searchable and links to S.F AI without embedding chat')
+
+    # Create a real device through the UI so the detail route has populated cards.
+    page.goto('http://127.0.0.1:4173/#/watch-passport', wait_until='domcontentloaded')
+    page.locator('.page-intro [data-action="modal-device"]').click()
+    page.locator('#device-form [name="displayName"]').fill('Đồng hồ của bé')
+    page.locator('#device-form [name="serialOrDeviceCode"]').fill('SAFEKID-' + '1234567890' * 6)
+    page.locator('button[form="device-form"][type="submit"]').click()
+    page.wait_for_timeout(500)
+    page.locator('.device-card [data-action^="device-detail:"]').wait_for(timeout=5000)
+    page.locator('.device-card [data-action^="device-detail:"]').click()
+    page.wait_for_url(lambda url: '#/watch-passport-detail?device=' in url)
+    device_route = '#' + page.url.split('#', 1)[1]
+    page.reload()
+    page.locator('.device-detail-grid').wait_for()
+    page.locator('[data-action^="modal-accessory:"]').click()
+    page.locator('#accessory-form').wait_for()
+    page.go_back()
+    page.locator('.modal-backdrop').wait_for(state='detached')
+    page.locator('.device-grid').wait_for()
+
+    page.goto('http://127.0.0.1:4173/#/settings', wait_until='domcontentloaded')
+    page.locator('[data-scroll-target="settings-motion"]').click()
+    motion.locator('label:has([value="maximum"])').click()
+    page.wait_for_function(maximum_saved)
+    popup_cases = [
+      ('#/safe-zones', 'modal-zone'), ('#/contacts', 'modal-contact'),
+      ('#/growth', 'modal-task'), ('#/growth', 'modal-habit'),
+      ('#/watch-passport', 'modal-device'), (device_route, 'modal-maintenance:'),
+      (device_route, 'modal-accessory:'), (device_route, 'modal-data:'),
+      (device_route, 'modal-document:'), ('#/sos', 'sos-confirm'),
+    ]
+    for width, height in [(320, 568), (390, 844)]:
+      page.set_viewport_size({'width':width,'height':height})
+      for route, action in popup_cases:
+        page.goto('http://127.0.0.1:4173/' + route, wait_until='domcontentloaded')
+        page.locator(f'[data-action^="{action}"]').first.click()
+        dialog = page.locator('.modal-backdrop:not([inert]) .modal')
+        dialog.wait_for()
+        dialog.locator(':scope > .modal-actions').wait_for()
+        dialog.evaluate("el => Promise.allSettled(el.getAnimations().map(animation => animation.finished))")
+        bounds = dialog.evaluate("""el => {
+          const box=el.getBoundingClientRect(), footer=el.querySelector(':scope > .modal-actions');
+          return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,
+            footer:footer.getBoundingClientRect().bottom, viewport:innerHeight};
+        }""")
+        assert bounds['right'] - bounds['left'] >= width - 24 and bounds['left'] >= 0 and bounds['right'] <= width and bounds['top'] >= 0 and bounds['bottom'] <= height and bounds['footer'] <= height, (route,action,width,bounds)
+        dialog.locator('.modal-head [data-action="modal-close"]').click()
+        dialog.wait_for(state='detached')
+    results.append('Ten popup entry points checked at two mobile sizes at maximum motion')
+
+    routes = [
+      '#/home', '#/location', '#/safe-zones', '#/sos', '#/alerts', '#/contacts',
+      '#/growth', '#/growth/habits', '#/growth/calendar', '#/growth/progress', '#/growth/coins',
+      '#/watch-passport', device_route, '#/more', '#/sfai', '#/help', '#/plans',
+      '#/profile', '#/settings', '#/permissions',
+    ]
+    for route in routes:
+      page.goto('http://127.0.0.1:4173/' + route, wait_until='domcontentloaded')
+      page.wait_for_timeout(500)
+      if route == '#/plans':
+        assert page.locator('.plan-free').is_visible() and page.locator('.plan-plus').is_visible(), 'Free and planned Plus cards must both be visible'
+        assert page.get_by_text('Không khóa SOS và Safe Zone cơ bản', exact=True).count() == 1, 'Core safety must remain Free'
+        assert page.locator('.plan-footer-plus').get_by_text('Chưa mở bán', exact=False).count() == 1, 'Plus must remain clearly marked as not for sale'
+        assert page.locator('.plan-footer-plus').get_by_text('Không có thanh toán trong ứng dụng', exact=True).count() == 1, 'No checkout/payment must be implied'
+        assert page.locator('.plan-plus button').count() == 0, 'No fake Plus purchase CTA may appear'
+        results.append('Plans Free/Plus transparency: core safety remains Free; Plus is planned with no checkout')
+      for width,height in [(320,720),(320,780),(360,800),(375,812),(390,844),(430,932)]:
+        page.set_viewport_size({'width':width,'height':height})
+        page.wait_for_timeout(50)
+        if route == '#/home':
+          labels = page.locator('.mobile-quick-actions a b').all_text_contents()
+          label_state = page.locator('.mobile-quick-actions a b').evaluate_all("els => els.map(el => ({text:el.textContent.trim(),whiteSpace:getComputedStyle(el).whiteSpace,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth}))")
+          assert len(labels) == 4 and all(x['whiteSpace'] == 'normal' for x in label_state), f'Home quick-action labels must wrap, not clip: {label_state}'
+          hierarchy = page.evaluate("""() => {const box=s=>document.querySelector(s)?.getBoundingClientRect();return {location:box('.location-feature')?.top,quick:box('.mobile-quick-actions')?.top,support:box('.support-entry-card')?.top,hero:document.querySelector('.family-hero') ? getComputedStyle(document.querySelector('.family-hero')).display : 'none',date:document.querySelector('.intro-date')?.textContent.trim(),dateFont:getComputedStyle(document.querySelector('.intro-date')).fontSize};}""")
+          assert hierarchy['location'] < hierarchy['quick'] < hierarchy['support'] and hierarchy['hero'] == 'none', f'Home must prioritize parent GPS status and actions over decoration: {hierarchy}'
+          assert hierarchy['date'] and hierarchy['dateFont'] != '0px', f'Home date label must be readable: {hierarchy}'
+        if route == '#/growth':
+          summary = page.locator('.growth-summary').evaluate("el => [...el.children].map(card => {const r=card.getBoundingClientRect();return {top:r.top,height:r.height,value:card.querySelector('strong').getBoundingClientRect().top};})")
+          assert abs(summary[0]['height'] - summary[1]['height']) < 1 and abs(summary[0]['value'] - summary[1]['value']) < 1, f'Growth summaries must align: {summary}'
+
+          tabs = page.locator('.tabbar a').evaluate_all("els => els.map(el => ({width:el.offsetWidth,height:el.offsetHeight}))")
+          tab_alignment = page.locator('.tabbar a').evaluate_all("els => els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,width:r.width,top:r.top};})")
+          assert max(x['width'] for x in tab_alignment)-min(x['width'] for x in tab_alignment)<1 and max(x['top'] for x in tab_alignment)-min(x['top'] for x in tab_alignment)<1, f'Growth tabs must share equal columns: {tab_alignment}'
+          assert abs((tab_alignment[1]['left']-tab_alignment[0]['left'])-tab_alignment[0]['width'])<1, f'Growth tabs must not bunch on the left: {tab_alignment}'
+          assert len(tabs) == 5 and all(x['height'] >= 44 for x in tabs), f'Growth tabs must keep usable touch targets at {width}px: {tabs}'
+        metrics=page.evaluate('''() => {
+          const nav=document.querySelector('.mobile-nav');
+          const wrap=document.querySelector('.page-wrap');
+          const links=[...(nav?.querySelectorAll('a')||[])];
+          return {viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth,
+            nav:nav?{top:nav.getBoundingClientRect().top,bottom:nav.getBoundingClientRect().bottom,height:nav.getBoundingClientRect().height}:null,
+            links:links.map(a=>({height:a.getBoundingClientRect().height,label:a.innerText.trim(),active:a.getAttribute('aria-current')})),
+            last:wrap?.lastElementChild?{bottom:wrap.lastElementChild.getBoundingClientRect().bottom}:null};
+        }''')
+        assert metrics['scroll'] <= metrics['viewport'], f'overflow {route} at {width}px: {metrics}'
+        page.wait_for_function('''() => {
+          const nav=document.querySelector('.family-dock'),active=nav.querySelector('a.active');
+          if(active.classList.contains('mobile-sos-link'))return true;
+          const style=getComputedStyle(nav,'::after'),matrix=new DOMMatrixReadOnly(style.transform);
+          const box=nav.getBoundingClientRect(),target=active.getBoundingClientRect();
+          const center=box.left+parseFloat(style.left)+matrix.m41+parseFloat(style.width)/2;
+          return Math.abs(center-target.left-target.width/2)<1;
+        }''')
+        pill_geometry = page.locator('.family-dock').evaluate("el=>{const s=getComputedStyle(el,'::after'),a=el.querySelector('a.active').getBoundingClientRect();return {width:parseFloat(s.width),targetWidth:a.width,inset:parseFloat(s.left)};}")
+        assert abs(pill_geometry['targetWidth']-pill_geometry['width']-12)<1 and pill_geometry['inset']==6, f'Navigation selection must have equal side insets: {pill_geometry}'
+        dock_geometry = page.locator('.family-dock').evaluate("el=>{const r=el.getBoundingClientRect(),b=el.querySelector('.mobile-sos-link .dock-icon').getBoundingClientRect();return {center:r.left+r.width/2,buttonCenter:b.left+b.width/2,relativeY:b.top+b.height/2-r.top};}")
+        assert abs(dock_geometry['center']-dock_geometry['buttonCenter'])<1 and abs(dock_geometry['relativeY']-9)<1, f'SOS must share the notch center: {dock_geometry}'
+        assert metrics['nav'] and metrics['nav']['bottom'] <= height, f'nav outside viewport {route} at {width}px: {metrics}'
+        if route == '#/sfai':
+          composer = page.locator('#sfai-form').evaluate("el => {const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};}")
+          nav_top = page.locator('.mobile-nav').evaluate("el => Math.min(el.getBoundingClientRect().top,el.querySelector('.mobile-sos-link .dock-icon').getBoundingClientRect().top)")
+          assert composer['height'] >= 48 and composer['bottom'] <= nav_top + 1 and composer['bottom'] <= height, f'S.F AI composer must remain visible above bottom navigation at {width}px: composer={composer}, navTop={nav_top}, viewport={height}'
+        assert len(metrics['links']) == 5 and all(x['height'] >= 44 and x['label'] for x in metrics['links']), f'five labelled touch targets required: {metrics}'
+        assert sum(1 for x in metrics['links'] if x['active'] == 'page') == 1, f'exactly one active route must be announced: {metrics}'
+        page.evaluate('window.scrollTo(0,document.documentElement.scrollHeight)')
+        page.wait_for_timeout(30)
+        bottom=page.evaluate('''() => {
+          const nav=document.querySelector('.mobile-nav'), wrap=document.querySelector('.page-wrap');
+          return nav&&wrap?.lastElementChild ? wrap.lastElementChild.getBoundingClientRect().bottom <= Math.min(nav.getBoundingClientRect().top,nav.querySelector('.mobile-sos-link .dock-icon').getBoundingClientRect().top) + 1 : true;
+        }''')
+        assert bottom, f'Bottom nav overlaps final content {route} at {width}px'
+      page.set_viewport_size({'width':390,'height':844})
+      page.wait_for_timeout(500)
+      page.evaluate('window.scrollTo(0,0)')
+      page.wait_for_timeout(120)
+      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route.split("?", 1)[0][2:].replace("/", "-") or "home"}-390-viewport.png'))
+      page.screenshot(path=str(SCREENSHOTS/f'redesign-{route.split("?", 1)[0][2:].replace("/", "-") or "home"}-390.png'),full_page=True)
+    results.append('Mobile route geometry matrix: 20 routes × 6 phone viewports; overflow and final-content/nav clearance')
+
+    # Post-setup responsive pages at mobile, tablet and desktop widths.
+    for width, height in [(320,780),(360,800),(390,844),(430,932),(767,900),(768,900),(1024,900),(1280,900),(1440,900),(1920,1080)]:
+      page.set_viewport_size({'width':width,'height':height})
+      page.wait_for_timeout(80)
+      metrics = page.evaluate('''() => ({viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth,nav:!!document.querySelector('.mobile-nav'),body:document.body.scrollWidth})''')
+      assert metrics['scroll'] <= metrics['viewport'], f'horizontal overflow at {width}px: {metrics}'
+      page.screenshot(path=str(SCREENSHOTS/f'v7-sos-{width}.png'), full_page=True)
+    results.append('Post-setup responsive overflow/screenshot matrix 320–1920px')
+
+    # Independent layout audit, including every CSS width boundary and neighboring pixels.
+    widths=[320,358,359,360,373,374,375,379,380,381,389,390,391,399,400,401,430,600,766,767,768,769,820,1022,1023,1024,1025,1199,1200,1201,1280,1440,1535,1536,1537,1920]
+    audit=[]
+    probe=r"""() => {
+      const visible=el=>el.getClientRects().length && getComputedStyle(el).visibility!=='hidden';
+      const label=el=>(el.innerText||el.getAttribute('aria-label')||el.placeholder||'').trim().slice(0,85);
+      const key=el=>el.tagName.toLowerCase()+(el.className?'.'+String(el.className).trim().split(/\s+/).join('.'):'');
+      const overflow=[], clipped=[], small=[], targets=[], overlaps=[];
+      const stage=document.querySelector('.route-stage');
+      for(const el of document.querySelectorAll('.route-stage *,.sidebar *,.mobile-nav *')){
+        if(!visible(el))continue;
+        const r=el.getBoundingClientRect(),css=getComputedStyle(el);
+        if(r.width>0&&(r.right>innerWidth+2||r.left< -2)&&!el.closest('.tabbar,.faq-category-filter'))
+          overflow.push({el:key(el),text:label(el),left:Math.round(r.left),right:Math.round(r.right)});
+        if(el.children.length===0&&label(el)&&r.width>0){
+          if(el.scrollWidth>el.clientWidth+2&&el.clientWidth>0&&['hidden','clip'].includes(css.overflowX))
+            clipped.push({el:key(el),text:label(el),width:Math.round(r.width)});
+          if(parseFloat(css.fontSize)<12)small.push({el:key(el),text:label(el),size:css.fontSize});
+        }
+        if(el.matches('a,button,input[type=checkbox],summary')&&r.width>0&&(r.width<44||r.height<44))
+          targets.push({el:key(el),text:label(el),w:Math.round(r.width),h:Math.round(r.height)});
+      }
+      for(const parent of stage?.querySelectorAll('.intro-actions,.growth-summary,.home-shortcuts,.settings-section-body,.section-row,.contact-row,.task-row,.sfai-toolbar')||[]){
+        const els=[...parent.children].filter(visible);
+        for(let i=0;i<els.length;i++)for(let j=i+1;j<els.length;j++){
+          const a=els[i].getBoundingClientRect(),b=els[j].getBoundingClientRect();
+          if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>3&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>3)
+            overlaps.push([key(parent),label(els[i]),label(els[j])]);
+        }
+      }
+      return {horizontal:document.documentElement.scrollWidth>innerWidth,overflow:overflow.slice(0,12),clipped:clipped.slice(0,12),small:small.slice(0,20),targets:targets.slice(0,20),overlaps};
+    }"""
+    for locale in ['vi','en']:
+      if locale=='en':
+        page.locator('[data-action="toggle-locale"]').click()
+      for route in routes:
+        page.goto('http://127.0.0.1:4173/'+route,wait_until='domcontentloaded')
+        page.locator('.route-stage').wait_for()
+        page.evaluate("document.querySelectorAll('details').forEach(el=>el.open=true)")
+        page.wait_for_timeout(500)
+        for width in widths:
+          height=844 if width<768 else 900
+          page.set_viewport_size({'width':width,'height':height})
+          page.wait_for_timeout(25)
+          data=page.evaluate(probe)
+          if data['horizontal'] or data['overflow'] or data['clipped'] or data['small'] or data['targets'] or data['overlaps']:
+            audit.append(dict(route=route,width=width,locale=locale,**data))
+          if locale=='vi' and width in [320,767,768,1023,1024,1200,1536]:
+            page.screenshot(path=str(SCREENSHOTS/f'audit-{route.split("?")[0][2:].replace("/","-")}-{width}.png'),full_page=True)
+    # 200% text scaling and landscape constrain height independently of width.
+    for width,height in [(320,568),(667,375),(844,390),(768,500),(1024,768)]:
+      page.set_viewport_size({'width':width,'height':height})
+      for route in routes:
+        page.goto('http://127.0.0.1:4173/'+route,wait_until='domcontentloaded')
+        page.locator('.route-stage').wait_for()
+        page.evaluate("document.querySelectorAll('details').forEach(el=>el.open=true)")
+        page.evaluate("""() => {const els=[...document.querySelectorAll('body *')];const sizes=els.map(el=>getComputedStyle(el).fontSize);els.forEach((el,i)=>el.style.fontSize=parseFloat(sizes[i])*2+'px');}""")
+        page.wait_for_timeout(400)
+        data=page.evaluate(probe)
+        audit.append(dict(route=route,width=width,height=height,scenario='root-font-200',**data))
+    (SCREENSHOTS/'layout-audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+    print('AUDIT_MATRIX',len(widths)*len(routes)*2,'boundary cases plus landscape cases')
+    # Compact, deduplicated log evidence with an example width.
+    unique={}
+    for row in audit:
+      for kind in ['horizontal','overflow','clipped','overlaps','small','targets']:
+        values=[True] if row[kind] is True else row[kind] if isinstance(row[kind],list) else []
+        for value in values:
+          k=(row['route'],row.get('scenario','baseline'),kind,json.dumps(value,sort_keys=True,ensure_ascii=False))
+          unique.setdefault(k,dict(route=row['route'],width=row['width'],locale=row.get('locale'),scenario=row.get('scenario','baseline'),kind=kind,value=value))
+    for finding in unique.values():print('LAYOUT_FINDING',json.dumps(finding,ensure_ascii=False))
+
+    if errors:
+      raise AssertionError('Browser page errors: ' + '; '.join(errors))
+    browser.close()
+except Exception as e:
+  import traceback
+  traceback.print_exc()
+  try:
+    print('Failure state: ' + page.locator('body').inner_text()[-5000:], file=sys.stderr)
+  except Exception:
+    pass
+  print(f'E2E FAILED/BLOCKED: {e}', file=sys.stderr)
+  if errors: print('Page errors: ' + '; '.join(errors), file=sys.stderr)
+  if console_errors: print('Console errors: ' + '; '.join(console_errors[:15]), file=sys.stderr)
+  sys.exit(1)
+
+print('E2E PASSED')
+for item in results: print(' - ' + item)
+print(f'Screenshots saved: {len(list(SCREENSHOTS.glob("*.png")))}')
