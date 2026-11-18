@@ -141,6 +141,39 @@ try:
     assert len(switch_geometry) == 5 and max(x['right'] for x in switch_geometry)-min(x['right'] for x in switch_geometry)<1 and all(x['width'] == 46 for x in switch_geometry), f'Notification switches must form one aligned column: {switch_geometry}'
     results.append('Settings hub anchors stay inside profile route')
 
+    # Motion settings apply immediately, persist, and honor the OS accessibility preference.
+    page.locator('[data-scroll-target="settings-motion"]').click()
+    motion = page.locator('#settings-motion')
+    assert motion.locator('[value="moderate"]').is_checked()
+    maximum_saved = """async () => {
+      const {getOne}=await import('/src/adapters/storage.js');
+      return (await getOne('meta','preferences'))?.value?.motion === 'maximum';
+    }"""
+    motion.locator('label:has([value="maximum"])').click()
+    page.wait_for_function("document.documentElement.dataset.motion === 'maximum'")
+    page.wait_for_function(maximum_saved)
+    max_duration = page.locator('html').evaluate("el => getComputedStyle(el).getPropertyValue('--motion-page').trim()")
+    assert max_duration == '355ms', max_duration
+    motion.locator('[data-action="motion-preview"]').click()
+    assert motion.locator('label:has([value="maximum"])').evaluate("el => el.getAnimations().some(animation => animation.id === 'motion-preview')")
+    page.emulate_media(reduced_motion='reduce')
+    page.wait_for_function("document.documentElement.dataset.motion === 'reduced'")
+    assert motion.locator('#motion-system-note').is_visible()
+    assert motion.locator('[value="maximum"]').is_checked()
+    page.emulate_media(reduced_motion='no-preference')
+    page.wait_for_function("document.documentElement.dataset.motion === 'maximum'")
+    assert not motion.locator('#motion-system-note').is_visible()
+    page.reload()
+    page.wait_for_function("document.documentElement.dataset.motion === 'maximum'")
+    page.locator('[data-scroll-target="settings-motion"]').click()
+    assert motion.locator('[value="maximum"]').is_checked()
+    motion.locator('label:has([value="reduced"])').click()
+    page.wait_for_function("document.documentElement.dataset.motion === 'reduced'")
+    assert page.locator('.mobile-nav').evaluate("el => getComputedStyle(el,'::after').transitionDuration") == '0s'
+    motion.locator('label:has([value="moderate"])').click()
+    page.wait_for_function("document.documentElement.dataset.motion === 'moderate'")
+    results.append('Three motion levels, live preview, persisted preference and system reduced-motion override')
+
     # Growth form conditional UI.
     page.locator('.mobile-nav a[href="#/growth"]').click()
     page.set_viewport_size({'width':390,'height':560})
@@ -314,6 +347,10 @@ try:
     page.locator('.modal-backdrop').wait_for(state='detached')
     page.locator('.device-grid').wait_for()
 
+    page.goto('http://127.0.0.1:4173/#/settings', wait_until='domcontentloaded')
+    page.locator('[data-scroll-target="settings-motion"]').click()
+    motion.locator('label:has([value="maximum"])').click()
+    page.wait_for_function(maximum_saved)
     popup_cases = [
       ('#/safe-zones', 'modal-zone'), ('#/contacts', 'modal-contact'),
       ('#/growth', 'modal-task'), ('#/growth', 'modal-habit'),
@@ -329,7 +366,7 @@ try:
         dialog = page.locator('.modal-backdrop:not([inert]) .modal')
         dialog.wait_for()
         dialog.locator(':scope > .modal-actions').wait_for()
-        page.wait_for_timeout(230)
+        dialog.evaluate("el => Promise.allSettled(el.getAnimations().map(animation => animation.finished))")
         bounds = dialog.evaluate("""el => {
           const box=el.getBoundingClientRect(), footer=el.querySelector(':scope > .modal-actions');
           return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,
@@ -338,7 +375,7 @@ try:
         assert bounds['right'] - bounds['left'] >= width - 24 and bounds['left'] >= 0 and bounds['right'] <= width and bounds['top'] >= 0 and bounds['bottom'] <= height and bounds['footer'] <= height, (route,action,width,bounds)
         dialog.locator('.modal-head [data-action="modal-close"]').click()
         dialog.wait_for(state='detached')
-    results.append('Ten popup entry points checked at two mobile sizes')
+    results.append('Ten popup entry points checked at two mobile sizes at maximum motion')
 
     routes = [
       '#/home', '#/location', '#/safe-zones', '#/sos', '#/alerts', '#/contacts',

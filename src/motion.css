@@ -1,0 +1,215 @@
+:root {
+  --motion-ease: cubic-bezier(.22,.8,.25,1);
+  --motion-tap: 130ms;
+  --motion-feedback: 180ms;
+  --motion-page: 190ms;
+  --motion-panel: 160ms;
+  --motion-dialog: 200ms;
+  --motion-nav: 215ms;
+  --motion-rise: 5px;
+  --motion-dialog-rise: 9px;
+  --motion-stagger: 0ms;
+  --motion-press: .985;
+}
+:root[data-motion="maximum"] {
+  --motion-tap: 210ms;
+  --motion-feedback: 295ms;
+  --motion-page: 355ms;
+  --motion-panel: 300ms;
+  --motion-dialog: 310ms;
+  --motion-nav: 360ms;
+  --motion-rise: 13px;
+  --motion-dialog-rise: 23px;
+  --motion-stagger: 30ms;
+  --motion-press: .96;
+}
+
+/* Animate a bounded set of visible sections. Keep the shell, map and chat layout stable. */
+html:root .route-stage.route-enter:not(:has(.sos-panel)),
+.home-intro, .family-hero, .home-section-row, .home-grid > .card, .family-nudge {
+  animation: none !important;
+}
+:root:not([data-motion="reduced"]) .route-stage.route-enter:not([data-page="sos"], [data-page="sfai"], [data-page="location"]):not(:has(.critical-banner))
+  > :nth-child(-n+5),
+:root:not([data-motion="reduced"]) .route-stage.route-enter[data-page="location"] > .page-intro,
+:root:not([data-motion="reduced"]) .welcome-panel,
+:root:not([data-motion="reduced"]) .motion-tab-enter {
+  animation: motion-arrive var(--motion-page) var(--motion-ease) var(--enter-delay, 0ms) backwards !important;
+}
+:root:not([data-motion="reduced"]) .motion-tab-enter {
+  animation-duration: var(--motion-panel) !important;
+}
+:root[data-motion="maximum"] .route-stage.route-enter > :nth-child(2) { --enter-delay: var(--motion-stagger); }
+:root[data-motion="maximum"] .route-stage.route-enter > :nth-child(3) { --enter-delay: calc(2 * var(--motion-stagger)); }
+:root[data-motion="maximum"] .route-stage.route-enter > :nth-child(4) { --enter-delay: calc(3 * var(--motion-stagger)); }
+:root[data-motion="maximum"] .route-stage.route-enter > :nth-child(5) { --enter-delay: calc(4 * var(--motion-stagger)); }
+:root:not([data-motion="reduced"]) .route-stage.route-enter[data-page="sfai"] .sfai-toolbar,
+:root:not([data-motion="reduced"]) .route-stage.route-enter[data-page="sfai"] .sfai-welcome {
+  animation: motion-arrive var(--motion-page) var(--motion-ease) backwards;
+}
+:root:not([data-motion="reduced"]) .route-stage.route-enter[data-page="sfai"] .sfai-messages {
+  animation: motion-fade var(--motion-page) var(--motion-ease) backwards;
+}
+.route-stage[data-page="growth"] { overflow-x: clip; }
+
+:root:not([data-motion="reduced"]) .app-shell .modal-backdrop.dialog-enter:not([inert]):not(:has(.sos-emergency,.danger-copy)) {
+  animation: motion-fade var(--motion-dialog) var(--motion-ease) backwards;
+}
+:root:not([data-motion="reduced"]) .app-shell .modal-backdrop.dialog-enter:not([inert]) .modal:not(:has(.sos-emergency,.danger-copy)) {
+  animation: motion-dialog-in var(--motion-dialog) var(--motion-ease) backwards;
+}
+.modal-backdrop[inert] { pointer-events: none; }
+.app-shell .modal:has(.sos-emergency) { animation: none !important; }
+
+:root:not([data-motion="reduced"]) :is(.settings-section[open] > .settings-section-body,
+.sos-sound-settings[open] > form, .faq-item[open] > .faq-answer) {
+  animation: motion-arrive var(--motion-panel) var(--motion-ease) backwards;
+}
+:where(.settings-chevron,.faq-chevron,.motion-option,.preference-switch,.preference-switch::before) {
+  transition-duration: var(--motion-feedback);
+  transition-timing-function: var(--motion-ease);
+}
+.settings-section .settings-chevron,
+.faq-item .faq-chevron,
+.preference-switch,
+.preference-switch::before {
+  transition-duration: var(--motion-feedback);
+  transition-timing-function: var(--motion-ease);
+}
+.mobile-nav.family-dock::after {
+  transition: transform var(--motion-nav) var(--motion-ease), opacity var(--motion-tap) ease-out;
+}
+.mobile-nav.family-dock a:not(.mobile-sos-link) .dock-icon {
+  transition: scale var(--motion-feedback) var(--motion-ease), color var(--motion-feedback) ease-out;
+}
+:root[data-motion="maximum"] .mobile-nav.family-dock a.active:not(.mobile-sos-link) .dock-icon { scale: 1.09; }
+
+:root:not([data-motion="reduced"]) :is(
+  .btn,.icon-btn,.text-btn,.hero-link,.nav-item,.settings-hub-jump,.more-link,.home-shortcuts a,
+  .faq-category-filter button,.sfai-prompts button,.sfai-session-open,.tabbar a,
+  .mobile-nav a:not(.mobile-sos-link),.device-card a,.calendar-row a,.plan-card a
+) {
+  transition-property: scale, translate, transform, color, background-color, border-color, box-shadow;
+  transition-duration: var(--motion-tap);
+  transition-timing-function: var(--motion-ease);
+}
+:root:not([data-motion="reduced"]) :is(
+  .btn:not(:disabled),.icon-btn,.text-btn,.settings-hub-jump,.more-link,.home-shortcuts a,
+  .faq-category-filter button,.sfai-prompts button,.sfai-session-open,.tabbar a,
+  .mobile-nav a:not(.mobile-sos-link),.device-card a,.calendar-row a,.plan-card a,
+  .settings-section summary,.faq-item summary
+):active { scale: var(--motion-press); }
+:root[data-motion="maximum"] :is(.settings-section summary,.faq-item summary,.motion-option) {
+  transition: scale var(--motion-tap) var(--motion-ease), background-color var(--motion-feedback) ease-out;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root[data-motion="maximum"] :is(.more-link,.home-shortcuts a,.sfai-prompts button,.settings-hub-jump,.device-card,.plan-card) {
+    transition: translate var(--motion-feedback) var(--motion-ease), box-shadow var(--motion-feedback) ease-out;
+  }
+  :root[data-motion="maximum"] :is(.more-link,.home-shortcuts a,.sfai-prompts button,.settings-hub-jump,.device-card,.plan-card):hover {
+    translate: 0 -3px;
+  }
+}
+.toast { transition-duration: var(--motion-feedback); transition-timing-function: var(--motion-ease); }
+
+:root .chat-screen .sfai-message-group,
+:root .chat-screen .sfai-message-group .chat-message,
+:root .chat-screen .sfai-thinking { animation: none; }
+:root:not([data-motion="reduced"]) .chat-screen .sfai-message-group .chat-message-new,
+:root:not([data-motion="reduced"]) .chat-screen .motion-thinking-enter {
+  animation: motion-arrive var(--motion-panel) var(--motion-ease) backwards;
+}
+:root[data-motion="maximum"] .chat-message-new.user { --tab-offset: 6px; }
+:root[data-motion="maximum"] .chat-message-new.assistant { --tab-offset: -6px; }
+:root[data-motion="maximum"] .sfai-thinking .thinking-dots i {
+  animation-name: motion-thinking-dot;
+  animation-duration: 860ms;
+}
+:root[data-motion="maximum"] .chat-message-new.assistant .sfai-route-actions {
+  animation: motion-arrive 230ms var(--motion-ease) 95ms backwards;
+}
+
+:root:not([data-motion="maximum"]) :is(.hero-sticker,.art-card,.hero-orbit,.safety-halo,.safety-spark,
+.nudge-spark,.growth-bubble,.family-hero-mascot,.welcome-mascot,.mascot-star,.growth-motto-art > img,
+.chat-screen .sfai-welcome > img),
+:root:not([data-motion="maximum"]) .phone-location-marker::before {
+  animation: none !important;
+}
+:root:not([data-motion="maximum"]) .phone-location-marker::before { opacity: 0; }
+:root[data-motion="maximum"] :is(.page-companion,.welcome-inline-mascot,.home-growth-art img) {
+  animation: motion-companion 3s ease-in-out 2;
+}
+:root[data-motion="maximum"] .sos-emergency-symbol::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid currentColor;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  animation: motion-sos-ring 1.3s ease-out 3;
+}
+.sos-emergency-symbol { position: relative; }
+:root:not([data-motion="reduced"]) .sos-hold { position: relative; overflow: hidden; }
+:root:not([data-motion="reduced"]) .sos-hold.holding::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 4px;
+  background: currentColor;
+  transform-origin: left;
+  pointer-events: none;
+  animation: motion-hold 1500ms linear forwards;
+}
+
+.motion-choices { display: grid; gap: 8px; padding: 0; margin: 0 0 14px; min-inline-size: 0; border: 0; }
+.motion-choices legend { padding: 0 0 8px; font-weight: 700; color: var(--sk-deep-blue); }
+.motion-option {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 55px;
+  padding: 10px 12px;
+  border: 1px solid var(--sk-border);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+.motion-option:has(input:checked) { background: #ecf8f7; border-color: #addad8; }
+.motion-option input[type="radio"] { flex: none; width: 20px; height: 20px; min-height: 0; margin: 0; accent-color: #087c80; }
+.motion-option b,.motion-option small { display: block; }
+.motion-option b { color: var(--sk-deep-blue); }
+.motion-option small { margin-top: 2px; color: var(--sk-muted); }
+.motion-system-note { margin: 0 0 12px; font-size: .9em; }
+.motion-system-note[hidden] { display: none; }
+
+@keyframes motion-arrive {
+  from { opacity: .5; translate: var(--tab-offset, 0px) var(--motion-rise); }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes motion-fade { from { opacity: .65; } to { opacity: 1; } }
+@keyframes motion-dialog-in {
+  from { opacity: .65; translate: 0 var(--motion-dialog-rise); }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes motion-thinking-dot {
+  0%, 70%, 100% { translate: 0 0; opacity: .45; }
+  35% { translate: 0 -5px; opacity: 1; }
+}
+@keyframes motion-companion { 50% { translate: 0 -5px; rotate: -2deg; } }
+@keyframes motion-sos-ring { 20% { opacity: .45; } to { opacity: 0; scale: 1.26; } }
+@keyframes motion-hold { from { scale: 0 1; } to { scale: 1 1; } }
+
+/* Disable motion without clearing transforms used for layout (switches, map pins and dock). */
+:root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+:root[data-motion="reduced"] :is(.btn,button,.card,.nav-item,.mobile-nav a,.stat-icon,.stat-arrow,.faq-item,.plan-card):is(:hover,:active) {
+  scale: none !important;
+  translate: none !important;
+  transform: none !important;
+}
